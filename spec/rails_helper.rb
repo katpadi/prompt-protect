@@ -24,6 +24,17 @@ require 'webmock/rspec'
 # Rails.root.glob('spec/support/**/*.rb').sort_by(&:to_s).each { |f| require f }
 
 RSpec.configure do |config|
+  # Stub the spaCy sidecar globally so specs don't need a running container.
+  # Tests that need specific NER results can override this stub locally.
+  config.before(:each) do
+    stub_request(:post, /spacy:5001\/detect/)
+      .to_return(
+        status: 200,
+        headers: { "Content-Type" => "application/json" },
+        body: { entities: [] }.to_json
+      )
+  end
+
   # Remove this line to enable support for ActiveRecord
   config.use_active_record = false
 

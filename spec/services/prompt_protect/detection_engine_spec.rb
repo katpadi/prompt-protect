@@ -7,6 +7,15 @@ RSpec.describe PromptProtect::DetectionEngine do
     context "with mixed sensitive data" do
       let(:text) { "John Smith's email is john@example.com and his phone is 555-123-4567" }
 
+      before do
+        stub_request(:post, /spacy:5001\/detect/)
+          .to_return(
+            status: 200,
+            headers: { "Content-Type" => "application/json" },
+            body: { entities: [ { text: "John Smith", label: "PERSON", start: 0, end: 10 } ] }.to_json
+          )
+      end
+
       it "returns findings from multiple detectors" do
         types = engine.call.map { |f| f[:type] }
         expect(types).to include(:person, :email, :phone)

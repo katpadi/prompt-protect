@@ -70,10 +70,11 @@ RSpec.describe "POST /v1/chat/completions", type: :request do
     end
 
     it "sends masked content to OpenAI, not the original email" do
-      forwarded_body = JSON.parse(WebMock::RequestRegistry.instance.requested_signatures.hash.keys.first.body)
-      masked_content = forwarded_body["messages"].first["content"]
-      expect(masked_content).to include("[EMAIL_1]")
-      expect(masked_content).not_to include("john@example.com")
+      expect(a_request(:post, /openai\.com/).with { |req|
+        body = JSON.parse(req.body)
+        body["messages"].first["content"].include?("[EMAIL_1]") &&
+          !body["messages"].first["content"].include?("john@example.com")
+      }).to have_been_made
     end
 
     it "sets risk level header to medium" do
