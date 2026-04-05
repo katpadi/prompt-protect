@@ -31,15 +31,11 @@ services:
     build:
       context: ./services/ner
       args:
-        NER_BACKEND: ${NER_BACKEND:-spacy}
         SPACY_MODEL: ${SPACY_MODEL:-en_core_web_sm}
     expose:
       - "5001"
     environment:
-      NER_BACKEND: ${NER_BACKEND:-spacy}
       SPACY_MODEL: ${SPACY_MODEL:-en_core_web_sm}
-      GLINER_MODEL: ${GLINER_MODEL:-urchade/gliner_small-v2.1}
-      HF_NER_MODEL: ${HF_NER_MODEL:-dslim/bert-base-NER}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5001/health"]

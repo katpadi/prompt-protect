@@ -124,7 +124,7 @@
         <p class="text-sm text-gray-500 mb-5">
           Hybrid pipeline: regex detectors run first, then the NER sidecar for entity types that need linguistic context.
           Text is normalized before detection — Unicode tricks, zero-width characters, and Base64 blobs are collapsed first.
-          The NER backend is swappable: <code class="text-gray-400">spaCy</code> (default, fast), <code class="text-gray-400">GLiNER</code> (better recall, ~30× slower), or <code class="text-gray-400">HuggingFace</code>.
+          The NER sidecar uses spaCy (<code class="text-gray-400">en_core_web_sm</code> by default; set <code class="text-gray-400">SPACY_MODEL=en_core_web_trf</code> for higher accuracy at the cost of ~2 GB RAM).
         </p>
 
         <table class="w-full text-xs border border-gray-800 rounded-lg overflow-hidden">
@@ -413,22 +413,10 @@ DOB: 01/15/1990      → [DOB_1]</pre>
               <td class="px-4 py-2.5 text-gray-500">NER sidecar URL</td>
             </tr>
             <tr class="bg-gray-950 hover:bg-gray-900/50">
-              <td class="px-4 py-2.5 text-gray-300">NER_BACKEND</td>
-              <td class="px-4 py-2.5 text-gray-600">no</td>
-              <td class="px-4 py-2.5 text-gray-500">spacy</td>
-              <td class="px-4 py-2.5 text-gray-500">NER backend: <code class="text-gray-400">spacy</code>, <code class="text-gray-400">gliner</code>, or <code class="text-gray-400">hf</code></td>
-            </tr>
-            <tr class="bg-gray-950 hover:bg-gray-900/50">
               <td class="px-4 py-2.5 text-gray-300">SPACY_MODEL</td>
               <td class="px-4 py-2.5 text-gray-600">no</td>
               <td class="px-4 py-2.5 text-gray-500">en_core_web_sm</td>
-              <td class="px-4 py-2.5 text-gray-500">spaCy model — sm (fast) or trf (accurate, ~2 GB RAM). NER_BACKEND=spacy only</td>
-            </tr>
-            <tr class="bg-gray-950 hover:bg-gray-900/50">
-              <td class="px-4 py-2.5 text-gray-300">GLINER_MODEL</td>
-              <td class="px-4 py-2.5 text-gray-600">no</td>
-              <td class="px-4 py-2.5 text-gray-500">urchade/gliner_small-v2.1</td>
-              <td class="px-4 py-2.5 text-gray-500">GLiNER model to load. NER_BACKEND=gliner only</td>
+              <td class="px-4 py-2.5 text-gray-500">spaCy model — en_core_web_sm (fast) or en_core_web_trf (accurate, ~2 GB RAM)</td>
             </tr>
             <tr class="bg-gray-950 hover:bg-gray-900/50">
               <td class="px-4 py-2.5 text-gray-300">CORS_ORIGINS</td>

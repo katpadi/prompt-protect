@@ -88,27 +88,19 @@ The NER sidecar runs as a separate container and is called automatically. If it 
 
 ### NER backend
 
-The sidecar supports three backends, swappable via `NER_BACKEND`:
-
-| Backend | Default | F1 | Precision | Recall | Latency | Notes |
-|---|---|---|---|---|---|---|
-| `spacy` | ✓ | 75.2% | 71.7% | 79.2% | ~1.5ms | Fast, low false positives |
-| `gliner` | | 73.2% | 60.0% | 93.8% | ~41ms | Better recall, 2× false positives |
-| `hf` | | — | — | — | — | Not yet implemented |
-
-Benchmarked against 52 labeled examples covering names, orgs, locations, and false positive traps (pronouns, job titles, generic place references). Fixture set: `services/ner/fixtures/ner_fixtures.json`.
-
-**Why spaCy is the default:** GLiNER has higher recall (93.8% vs 79.2%) but produces twice as many false positives (30 vs 15 on the same fixture set). In a privacy proxy, false positives mean legitimate prompts get masked or blocked — that's a worse failure mode than occasionally missing a company name. GLiNER is worth considering if your workload is heavy on single-word org names (startups, brands) and you can tolerate the noise and 27× latency increase.
-
-To run the benchmark yourself:
+The sidecar uses spaCy (`en_core_web_sm` by default). Switch to the transformer model for higher accuracy at the cost of ~2 GB RAM:
 
 ```bash
-# Build and run against each backend
-docker build --build-arg NER_BACKEND=spacy  -t ner-spacy  services/ner
-docker build --build-arg NER_BACKEND=gliner -t ner-gliner services/ner
+SPACY_MODEL=en_core_web_trf docker compose up
+```
 
-docker run --rm -e NER_BACKEND=spacy  ner-spacy  python benchmark.py
-docker run --rm -e NER_BACKEND=gliner ner-gliner python benchmark.py
+**Why spaCy:** We benchmarked spaCy against GLiNER (a generalist zero-shot NER model) on 52 labeled examples covering names, orgs, locations, and false positive traps. GLiNER has better recall (93.8% vs 79.2%) but produces twice as many false positives (30 vs 15) and is 27× slower (41ms vs 1.5ms). In a privacy proxy, false positives cause legitimate prompts to be masked or blocked unnecessarily — that's the worse failure mode. spaCy wins on F1 (75.2% vs 73.2%) and is the better fit.
+
+Benchmark fixtures are in `services/ner/fixtures/ner_fixtures.json`. To re-run:
+
+```bash
+docker build -t ner-bench services/ner
+docker run --rm ner-bench python benchmark.py
 ```
 
 ## Risk levels
@@ -170,10 +162,7 @@ Every response includes transparency headers:
 | `PROMPT_PROTECT_POLICY_HIGH` | No | `block` | Action for high risk |
 | `NER_ENABLED` | No | `true` | Set to `false` to use regex-only detection |
 | `NER_SERVICE_URL` | No | `http://spacy:5001` | NER sidecar URL |
-| `NER_BACKEND` | No | `spacy` | NER backend: `spacy`, `gliner`, or `hf` |
-| `SPACY_MODEL` | No | `en_core_web_sm` | spaCy model — `en_core_web_sm` (fast) or `en_core_web_trf` (accurate, ~2 GB RAM). Only used when `NER_BACKEND=spacy` |
-| `GLINER_MODEL` | No | `urchade/gliner_small-v2.1` | GLiNER model to load. Only used when `NER_BACKEND=gliner` |
-| `HF_NER_MODEL` | No | `dslim/bert-base-NER` | HuggingFace model to load. Only used when `NER_BACKEND=hf` |
+| `SPACY_MODEL` | No | `en_core_web_sm` | spaCy model — `en_core_web_sm` (fast) or `en_core_web_trf` (accurate, ~2 GB RAM) |
 | `PROMPT_PROTECT_PROVIDER` | No | `openai` | LLM provider (`openai` only — others not yet implemented). Can also be set per-request via `"provider"` field |
 
 Policy actions: `allow` · `sanitize` · `block`

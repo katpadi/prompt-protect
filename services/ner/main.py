@@ -3,26 +3,10 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 
 from backends.spacy_backend import SpacyBackend
-from backends.gliner_backend import GlinerBackend
-from backends.hf_backend import HuggingFaceBackend
 
 app = FastAPI(title="Prompt Protect — NER Service")
 
-BACKENDS = {
-    "spacy":  SpacyBackend,
-    "gliner": GlinerBackend,
-    "hf":     HuggingFaceBackend,
-}
-
-NER_BACKEND = os.getenv("NER_BACKEND", "spacy").lower()
-
-if NER_BACKEND not in BACKENDS:
-    raise RuntimeError(
-        f"Unknown NER_BACKEND '{NER_BACKEND}'. "
-        f"Available: {', '.join(BACKENDS.keys())}"
-    )
-
-backend = BACKENDS[NER_BACKEND]()
+backend = SpacyBackend()
 backend.load()
 
 
@@ -45,7 +29,7 @@ class DetectResponse(BaseModel):
 def health():
     return {
         "status":  "ok",
-        "backend": NER_BACKEND,
+        "backend": "spacy",
         "model":   backend.model_name(),
     }
 

@@ -9,28 +9,14 @@ RUN apt-get update -qq && \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Backend-specific dependencies
-ARG NER_BACKEND=spacy
 ARG SPACY_MODEL=en_core_web_sm
 
-# spaCy backend: optionally install transformer support and download model
-RUN if [ "$NER_BACKEND" = "spacy" ]; then \
-      if [ "$SPACY_MODEL" = "en_core_web_trf" ]; then \
-        pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu && \
-        pip install --no-cache-dir spacy-transformers; \
-      fi && \
-      python -m spacy download ${SPACY_MODEL}; \
+RUN if [ "$SPACY_MODEL" = "en_core_web_trf" ]; then \
+      pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu && \
+      pip install --no-cache-dir spacy-transformers; \
     fi
 
-# GLiNER backend
-RUN if [ "$NER_BACKEND" = "gliner" ]; then \
-      pip install --no-cache-dir gliner; \
-    fi
-
-# HuggingFace backend
-RUN if [ "$NER_BACKEND" = "hf" ]; then \
-      pip install --no-cache-dir transformers torch --index-url https://download.pytorch.org/whl/cpu; \
-    fi
+RUN python -m spacy download ${SPACY_MODEL}
 
 COPY . .
 
