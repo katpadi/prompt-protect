@@ -28,7 +28,7 @@ services:
 
   spacy:
     build:
-      context: ./services/spacy
+      context: ./services/ner
       args:
         NER_BACKEND: ${NER_BACKEND:-spacy}
         SPACY_MODEL: ${SPACY_MODEL:-en_core_web_sm}
