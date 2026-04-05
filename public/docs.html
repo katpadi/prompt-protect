@@ -105,51 +105,14 @@
       <!-- Integration -->
       <section id="integration">
         <h2 class="text-lg font-bold text-white mb-1">Integration</h2>
-        <p class="text-sm text-gray-500 mb-5">Change <code class="text-indigo-400">base_url</code> to point at the proxy. That's the entire change.</p>
+        <p class="text-sm text-gray-500 mb-4">Point any OpenAI-compatible client at the proxy by changing the base URL. The request format is identical to OpenAI's API.</p>
 
-        <div class="space-y-4">
-          <div>
-            <p class="text-xs text-gray-500 uppercase tracking-widest mb-2">Python</p>
-            <pre class="bg-gray-900 border border-gray-800 rounded-lg px-4 py-3 text-sm overflow-x-auto leading-relaxed"><span class="token-key">from</span> <span class="text-gray-300">openai</span> <span class="token-key">import</span> <span class="text-gray-300">OpenAI</span>
-
-<span class="text-gray-300">client</span> = <span class="text-gray-300">OpenAI</span>(
-    <span class="token-key">api_key</span>=<span class="token-str">"your-openai-api-key"</span>,  <span class="token-null"># or omit if OPENAI_API_KEY is set in your env</span>
-    <span class="token-key">base_url</span>=<span class="token-str">"http://localhost:3000/v1"</span>
-)
-
-<span class="text-gray-300">response</span> = <span class="text-gray-300">client.chat.completions.create</span>(
-    <span class="token-key">model</span>=<span class="token-str">"gpt-4o"</span>,
-    <span class="token-key">messages</span>=[{<span class="token-str">"role"</span>: <span class="token-str">"user"</span>, <span class="token-str">"content"</span>: <span class="token-str">"Hello!"</span>}]
-)</pre>
-          </div>
-
-          <div>
-            <p class="text-xs text-gray-500 uppercase tracking-widest mb-2">Node.js</p>
-            <pre class="bg-gray-900 border border-gray-800 rounded-lg px-4 py-3 text-sm overflow-x-auto leading-relaxed"><span class="token-key">import</span> <span class="text-gray-300">OpenAI</span> <span class="token-key">from</span> <span class="token-str">"openai"</span><span class="token-punct">;</span>
-
-<span class="token-key">const</span> <span class="text-gray-300">client</span> = <span class="token-key">new</span> <span class="text-gray-300">OpenAI</span>({
-  <span class="token-key">apiKey</span>: <span class="token-str">"your-openai-api-key"</span>,  <span class="token-null">// or omit if OPENAI_API_KEY is set in your env</span>
-  <span class="token-key">baseURL</span>: <span class="token-str">"http://localhost:3000/v1"</span>,
-})<span class="token-punct">;</span>
-
-<span class="token-key">const</span> <span class="text-gray-300">response</span> = <span class="token-key">await</span> <span class="text-gray-300">client.chat.completions.create</span>({
-  <span class="token-key">model</span>: <span class="token-str">"gpt-4o"</span>,
-  <span class="token-key">messages</span>: [{ <span class="token-key">role</span>: <span class="token-str">"user"</span>, <span class="token-key">content</span>: <span class="token-str">"Hello!"</span> }],
-})<span class="token-punct">;</span></pre>
-          </div>
-
-          <div>
-            <p class="text-xs text-gray-500 uppercase tracking-widest mb-2">curl</p>
-            <pre class="bg-gray-900 border border-gray-800 rounded-lg px-4 py-3 text-sm text-gray-300 overflow-x-auto">curl http://localhost:3000/v1/chat/completions \
+        <pre class="bg-gray-900 border border-gray-800 rounded-lg px-4 py-3 text-sm text-gray-300 overflow-x-auto">curl http://localhost:3000/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{"model":"gpt-4o","messages":[{"role":"user","content":"Hello!"}]}'</pre>
-          </div>
-        </div>
 
-        <div class="mt-4 px-4 py-3 bg-gray-900 border border-indigo-900/50 rounded-lg text-xs text-gray-400 space-y-1.5 leading-relaxed">
-          <p><span class="text-indigo-400 font-semibold">How auth works:</span> The proxy strips whatever <code class="text-gray-300">Authorization</code> header the client sends and replaces it with its own <code class="text-gray-300">OPENAI_API_KEY</code> before forwarding to OpenAI.</p>
-          <p><span class="text-gray-300">The API key lives in the proxy's <code class="text-gray-200">.env</code></span> — configured once by whoever runs the proxy (you, your platform team, your infra). Client applications don't need it and shouldn't have it.</p>
-          <p>The SDK still requires a non-empty <code class="text-gray-300">api_key</code> argument or it throws before making any request. Pass your real key, a placeholder, or set <code class="text-gray-300">OPENAI_API_KEY</code> in the client's env — the value is stripped at the proxy and never reaches OpenAI.</p>
+        <div class="mt-4 px-4 py-3 bg-gray-900 border border-indigo-900/50 rounded-lg text-xs text-gray-400 leading-relaxed">
+          The API key lives in the proxy's <code class="text-gray-300">.env</code> — set once by whoever runs it. The proxy injects it when forwarding to OpenAI. Clients don't need it.
         </div>
       </section>
 

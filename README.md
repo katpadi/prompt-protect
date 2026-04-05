@@ -33,46 +33,15 @@ The proxy is now running on `http://localhost:3000`.
 
 ## Integration
 
-Change your OpenAI client's base URL to point at the proxy. That's the entire integration.
+Point any OpenAI-compatible client at the proxy by changing the base URL. The request format is identical to OpenAI's API — no other changes needed.
 
-**Python**
-```python
-from openai import OpenAI
-
-client = OpenAI(
-    api_key="your-openai-api-key",  # or omit if OPENAI_API_KEY is set in your env
-    base_url="http://localhost:3000/v1"
-)
-
-response = client.chat.completions.create(
-    model="gpt-4o",
-    messages=[{"role": "user", "content": "Hello!"}]
-)
-```
-
-**Node.js**
-```js
-import OpenAI from "openai";
-
-const client = new OpenAI({
-  apiKey: "your-openai-api-key",  // or omit if OPENAI_API_KEY is set in your env
-  baseURL: "http://localhost:3000/v1",
-});
-
-const response = await client.chat.completions.create({
-  model: "gpt-4o",
-  messages: [{ role: "user", content: "Hello!" }],
-});
-```
-
-**curl**
 ```bash
 curl http://localhost:3000/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{"model":"gpt-4o","messages":[{"role":"user","content":"Hello!"}]}'
 ```
 
-**How auth works:** The proxy strips whatever `Authorization` header the client sends and replaces it with its own `OPENAI_API_KEY` before forwarding to OpenAI. The API key lives in the proxy's `.env` — configured once by whoever runs the proxy. Client applications don't need it and shouldn't have it. The SDK still requires a non-empty `api_key` argument or it throws before making any request — pass your real key, a placeholder, or set `OPENAI_API_KEY` in the client's env. Either way, the value is stripped at the proxy and never reaches OpenAI.
+The API key lives in the proxy's `.env` — set once by whoever runs it. The proxy injects it when forwarding to OpenAI. Clients don't need it.
 
 ## Dry run mode
 
