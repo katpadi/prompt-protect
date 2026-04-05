@@ -1,0 +1,44 @@
+services:
+  app:
+    build: .
+    ports:
+      - "3000:80"
+    environment:
+      # Required
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE:-eee42717db82a7d1314c12cc59bf82390c3a61c1cc081148da39d8764ad636b80ba2c40ffb9b1cffa490a889e974ec05c6b41c81402585cd730249f4f7a0cf7c}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      # Optional — defaults shown
+      OPENAI_API_BASE_URL: ${OPENAI_API_BASE_URL:-https://api.openai.com}
+      CORS_ORIGINS: ${CORS_ORIGINS:-*}
+      PROMPT_PROTECT_POLICY_LOW: ${PROMPT_PROTECT_POLICY_LOW:-allow}
+      PROMPT_PROTECT_POLICY_MEDIUM: ${PROMPT_PROTECT_POLICY_MEDIUM:-sanitize}
+      PROMPT_PROTECT_POLICY_HIGH: ${PROMPT_PROTECT_POLICY_HIGH:-block}
+      SPACY_ENABLED: ${SPACY_ENABLED:-true}
+      SPACY_SERVICE_URL: ${SPACY_SERVICE_URL:-http://spacy:5001}
+    depends_on:
+      spacy:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  spacy:
+    build:
+      context: ./services/spacy
+      args:
+        SPACY_MODEL: ${SPACY_MODEL:-en_core_web_sm}
+    expose:
+      - "5001"
+    environment:
+      SPACY_MODEL: ${SPACY_MODEL:-en_core_web_sm}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
