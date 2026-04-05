@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Prompt Protect — Docs</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    html { scroll-behavior: smooth; }
+    .nav-link { transition: color 0.15s, border-color 0.15s; }
+    .nav-link.active { color: #818cf8; border-left-color: #818cf8; }
+    pre { tab-size: 2; }
+    .token-key    { color: #7dd3fc; }
+    .token-str    { color: #86efac; }
+    .token-num    { color: #fca5a5; }
+    .token-bool   { color: #fbbf24; }
+    .token-null   { color: #9ca3af; }
+    .token-punct  { color: #6b7280; }
+  </style>
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen font-mono">
+
+  <!-- Top bar -->
+  <header class="fixed top-0 left-0 right-0 z-50 border-b border-gray-800 bg-gray-950/95 backdrop-blur px-6 py-3 flex items-center gap-3">
+    <span class="text-lg">🛡</span>
+    <span class="font-bold text-white text-sm">Prompt Protect</span>
+    <span class="text-gray-700 text-xs ml-1">/ docs</span>
+    <a href="/playground.html"
+       class="ml-auto text-xs text-gray-500 hover:text-gray-300 border border-gray-700 hover:border-gray-500 px-3 py-1.5 rounded transition">
+      Playground
+    </a>
+  </header>
+
+  <div class="flex pt-12">
+
+    <!-- Sidebar -->
+    <nav class="hidden md:flex flex-col fixed left-0 top-12 bottom-0 w-52 border-r border-gray-800 bg-gray-950 overflow-y-auto px-4 py-6 text-xs gap-1">
+      <p class="text-gray-600 uppercase tracking-widest text-[10px] mb-2">Getting started</p>
+      <a href="#overview"     class="nav-link border-l-2 border-transparent pl-3 py-1 text-gray-400 hover:text-gray-200">Overview</a>
+      <a href="#quickstart"   class="nav-link border-l-2 border-transparent pl-3 py-1 text-gray-400 hover:text-gray-200">Quick start</a>
+      <a href="#integration"  class="nav-link border-l-2 border-transparent pl-3 py-1 text-gray-400 hover:text-gray-200">Integration</a>
+
+      <p class="text-gray-600 uppercase tracking-widest text-[10px] mt-5 mb-2">Reference</p>
+      <a href="#detection"    class="nav-link border-l-2 border-transparent pl-3 py-1 text-gray-400 hover:text-gray-200">Detection</a>
+      <a href="#risk"         class="nav-link border-l-2 border-transparent pl-3 py-1 text-gray-400 hover:text-gray-200">Risk levels</a>
+      <a href="#policy"       class="nav-link border-l-2 border-transparent pl-3 py-1 text-gray-400 hover:text-gray-200">Policy</a>
+      <a href="#masking"      class="nav-link border-l-2 border-transparent pl-3 py-1 text-gray-400 hover:text-gray-200">Masking</a>
+      <a href="#headers"      class="nav-link border-l-2 border-transparent pl-3 py-1 text-gray-400 hover:text-gray-200">Response headers</a>
+      <a href="#env"          class="nav-link border-l-2 border-transparent pl-3 py-1 text-gray-400 hover:text-gray-200">Env variables</a>
+
+      <p class="text-gray-600 uppercase tracking-widest text-[10px] mt-5 mb-2">Scenarios</p>
+      <a href="#scenario-dryrun"   class="nav-link border-l-2 border-transparent pl-3 py-1 text-gray-400 hover:text-gray-200">Dry run</a>
+      <a href="#scenario-sanitize" class="nav-link border-l-2 border-transparent pl-3 py-1 text-gray-400 hover:text-gray-200">Sanitize (email)</a>
+      <a href="#scenario-block"    class="nav-link border-l-2 border-transparent pl-3 py-1 text-gray-400 hover:text-gray-200">Block (SSN)</a>
+      <a href="#scenario-mosaic"   class="nav-link border-l-2 border-transparent pl-3 py-1 text-gray-400 hover:text-gray-200">Mosaic profile</a>
+      <a href="#scenario-secret"   class="nav-link border-l-2 border-transparent pl-3 py-1 text-gray-400 hover:text-gray-200">API key leak</a>
+      <a href="#scenario-encoding" class="nav-link border-l-2 border-transparent pl-3 py-1 text-gray-400 hover:text-gray-200">Encoding evasion</a>
+    </nav>
+
+    <!-- Main content -->
+    <main class="md:ml-52 flex-1 max-w-3xl mx-auto px-6 py-10 space-y-16">
+
+      <!-- Overview -->
+      <section id="overview">
+        <h1 class="text-2xl font-bold text-white mb-3">Prompt Protect</h1>
+        <p class="text-gray-400 text-sm leading-relaxed mb-4">
+          A drop-in HTTP proxy that sits between your backend and an LLM provider. Point your OpenAI-compatible client at it instead of OpenAI directly — no other changes required.
+        </p>
+        <div class="bg-gray-900 border border-gray-800 rounded-lg px-4 py-3 text-sm text-gray-300">
+          Your App &nbsp;→&nbsp; <span class="text-indigo-400 font-semibold">Prompt Protect</span> &nbsp;→&nbsp; OpenAI
+        </div>
+        <p class="text-gray-500 text-xs mt-4 leading-relaxed">
+          Every request is normalized, scanned for PII and secrets, scored for risk, and either allowed, masked, or blocked — before any data leaves your infrastructure.
+        </p>
+      </section>
+
+      <div class="border-t border-gray-800"></div>
+
+      <!-- Quick start -->
+      <section id="quickstart">
+        <h2 class="text-lg font-bold text-white mb-4">Quick start</h2>
+
+        <div class="space-y-4">
+          <div>
+            <p class="text-xs text-gray-500 uppercase tracking-widest mb-2">1. Configure</p>
+            <pre class="bg-gray-900 border border-gray-800 rounded-lg px-4 py-3 text-sm text-gray-300 overflow-x-auto">cp .env.example .env
+# Add your OPENAI_API_KEY to .env</pre>
+          </div>
+
+          <div>
+            <p class="text-xs text-gray-500 uppercase tracking-widest mb-2">2. Run</p>
+            <pre class="bg-gray-900 border border-gray-800 rounded-lg px-4 py-3 text-sm text-gray-300 overflow-x-auto">docker compose up</pre>
+            <p class="text-xs text-gray-600 mt-1.5">Proxy on <code class="text-indigo-400">http://localhost:3000</code> · spaCy NER sidecar on <code class="text-indigo-400">http://localhost:5001</code></p>
+          </div>
+
+          <div>
+            <p class="text-xs text-gray-500 uppercase tracking-widest mb-2">3. Verify</p>
+            <pre class="bg-gray-900 border border-gray-800 rounded-lg px-4 py-3 text-sm text-gray-300 overflow-x-auto">curl http://localhost:3000/health</pre>
+          </div>
+        </div>
+      </section>
+
+      <div class="border-t border-gray-800"></div>
+
+      <!-- Integration -->
+      <section id="integration">
+        <h2 class="text-lg font-bold text-white mb-1">Integration</h2>
+        <p class="text-sm text-gray-500 mb-5">Change <code class="text-indigo-400">base_url</code> to point at the proxy. That's the entire change.</p>
+
+        <div class="space-y-4">
+          <div>
+            <p class="text-xs text-gray-500 uppercase tracking-widest mb-2">Python</p>
+            <pre class="bg-gray-900 border border-gray-800 rounded-lg px-4 py-3 text-sm overflow-x-auto leading-relaxed"><span class="token-key">from</span> <span class="text-gray-300">openai</span> <span class="token-key">import</span> <span class="text-gray-300">OpenAI</span>
+
+<span class="text-gray-300">client</span> = <span class="text-gray-300">OpenAI</span>(
+    <span class="token-key">api_key</span>=<span class="token-str">"not-needed"</span>,
+    <span class="token-key">base_url</span>=<span class="token-str">"http://localhost:3000/v1"</span>
+)
+
+<span class="text-gray-300">response</span> = <span class="text-gray-300">client.chat.completions.create</span>(
+    <span class="token-key">model</span>=<span class="token-str">"gpt-4o"</span>,
+    <span class="token-key">messages</span>=[{<span class="token-str">"role"</span>: <span class="token-str">"user"</span>, <span class="token-str">"content"</span>: <span class="token-str">"Hello!"</span>}]
+)</pre>
+          </div>
+
+          <div>
+            <p class="text-xs text-gray-500 uppercase tracking-widest mb-2">Node.js</p>
+            <pre class="bg-gray-900 border border-gray-800 rounded-lg px-4 py-3 text-sm overflow-x-auto leading-relaxed"><span class="token-key">import</span> <span class="text-gray-300">OpenAI</span> <span class="token-key">from</span> <span class="token-str">"openai"</span><span class="token-punct">;</span>
+
+<span class="token-key">const</span> <span class="text-gray-300">client</span> = <span class="token-key">new</span> <span class="text-gray-300">OpenAI</span>({
+  <span class="token-key">apiKey</span>: <span class="token-str">"not-needed"</span>,
+  <span class="token-key">baseURL</span>: <span class="token-str">"http://localhost:3000/v1"</span>,
+})<span class="token-punct">;</span>
+
+<span class="token-key">const</span> <span class="text-gray-300">response</span> = <span class="token-key">await</span> <span class="text-gray-300">client.chat.completions.create</span>({
+  <span class="token-key">model</span>: <span class="token-str">"gpt-4o"</span>,
+  <span class="token-key">messages</span>: [{ <span class="token-key">role</span>: <span class="token-str">"user"</span>, <span class="token-key">content</span>: <span class="token-str">"Hello!"</span> }],
+})<span class="token-punct">;</span></pre>
+          </div>
+
+          <div>
+            <p class="text-xs text-gray-500 uppercase tracking-widest mb-2">curl</p>
+            <pre class="bg-gray-900 border border-gray-800 rounded-lg px-4 py-3 text-sm text-gray-300 overflow-x-auto">curl http://localhost:3000/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{"model":"gpt-4o","messages":[{"role":"user","content":"Hello!"}]}'</pre>
+          </div>
+        </div>
+
+        <div class="mt-4 px-4 py-3 bg-gray-900 border border-gray-800 rounded-lg text-xs text-gray-500">
+          No <code class="text-gray-400">Authorization</code> header needed from your client — Prompt Protect injects <code class="text-gray-400">OPENAI_API_KEY</code> when forwarding.
+        </div>
+      </section>
+
+      <div class="border-t border-gray-800"></div>
+
+      <!-- Detection -->
+      <section id="detection">
+        <h2 class="text-lg font-bold text-white mb-1">Detection</h2>
+        <p class="text-sm text-gray-500 mb-5">
+          Hybrid pipeline: regex detectors run first, then spaCy NER for entity types that need linguistic context.
+          Text is normalized before detection — Unicode tricks, zero-width characters, and Base64 blobs are collapsed first.
+        </p>
+
+        <table class="w-full text-xs border border-gray-800 rounded-lg overflow-hidden">
+          <thead>
+            <tr class="bg-gray-900 text-gray-500 uppercase tracking-widest text-[10px]">
+              <th class="text-left px-4 py-2.5">Detector</th>
+              <th class="text-left px-4 py-2.5">Type</th>
+              <th class="text-left px-4 py-2.5">Catches</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-800">
+            <tr class="bg-gray-950 hover:bg-gray-900/50">
+              <td class="px-4 py-2.5 text-gray-300">EmailDetector</td>
+              <td class="px-4 py-2.5"><code class="text-indigo-400">:email</code></td>
+              <td class="px-4 py-2.5 text-gray-500">user@example.com</td>
+            </tr>
+            <tr class="bg-gray-950 hover:bg-gray-900/50">
+              <td class="px-4 py-2.5 text-gray-300">PhoneDetector</td>
+              <td class="px-4 py-2.5"><code class="text-indigo-400">:phone</code></td>
+              <td class="px-4 py-2.5 text-gray-500">555-123-4567, +1 (800) 555 0100</td>
+            </tr>
+            <tr class="bg-gray-950 hover:bg-gray-900/50">
+              <td class="px-4 py-2.5 text-gray-300">AddressDetector</td>
+              <td class="px-4 py-2.5"><code class="text-indigo-400">:address</code></td>
+              <td class="px-4 py-2.5 text-gray-500">12 Main St, Springfield IL</td>
+            </tr>
+            <tr class="bg-gray-950 hover:bg-gray-900/50">
+              <td class="px-4 py-2.5 text-gray-300">IdDetector</td>
+              <td class="px-4 py-2.5"><code class="text-indigo-400">:id</code></td>
+              <td class="px-4 py-2.5 text-gray-500">SSN 123-45-6789, credit card 4111 1111 1111 1111</td>
+            </tr>
+            <tr class="bg-gray-950 hover:bg-gray-900/50">
+              <td class="px-4 py-2.5 text-gray-300">IpDetector</td>
+              <td class="px-4 py-2.5"><code class="text-indigo-400">:ip</code></td>
+              <td class="px-4 py-2.5 text-gray-500">192.168.1.1, 2001:db8::1</td>
+            </tr>
+            <tr class="bg-gray-950 hover:bg-gray-900/50">
+              <td class="px-4 py-2.5 text-gray-300">SecretDetector</td>
+              <td class="px-4 py-2.5"><code class="text-indigo-400">:secret</code></td>
+              <td class="px-4 py-2.5 text-gray-500">Bearer tokens, sk-... API keys, AWS access keys</td>
+            </tr>
+            <tr class="bg-gray-950 hover:bg-gray-900/50">
+              <td class="px-4 py-2.5 text-gray-300">DobDetector</td>
+              <td class="px-4 py-2.5"><code class="text-indigo-400">:dob</code></td>
+              <td class="px-4 py-2.5 text-gray-500">DOB: 01/15/1990, born January 15 1990 (keyword required)</td>
+            </tr>
+            <tr class="bg-gray-950 hover:bg-gray-900/50">
+              <td class="px-4 py-2.5 text-gray-300">NerDetector</td>
+              <td class="px-4 py-2.5"><code class="text-indigo-400">:person</code></td>
+              <td class="px-4 py-2.5 text-gray-500">Full names via spaCy</td>
+            </tr>
+            <tr class="bg-gray-950 hover:bg-gray-900/50">
+              <td class="px-4 py-2.5 text-gray-300">NerDetector</td>
+              <td class="px-4 py-2.5"><code class="text-indigo-400">:org</code></td>
+              <td class="px-4 py-2.5 text-gray-500">Company and org names via spaCy</td>
+            </tr>
+            <tr class="bg-gray-950 hover:bg-gray-900/50">
+              <td class="px-4 py-2.5 text-gray-300">NerDetector</td>
+              <td class="px-4 py-2.5"><code class="text-indigo-400">:location</code></td>
+              <td class="px-4 py-2.5 text-gray-500">Countries, cities, places via spaCy</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="mt-3 px-4 py-3 bg-gray-900 border border-gray-800 rounded-lg text-xs text-gray-500">
+          If the spaCy sidecar is unavailable, NER detection falls back to heuristic regex-based person detection.
+          Set <code class="text-gray-400">SPACY_ENABLED=false</code> to skip it entirely.
+        </div>
+      </section>
+
+      <div class="border-t border-gray-800"></div>
+
+      <!-- Risk levels -->
+      <section id="risk">
+        <h2 class="text-lg font-bold text-white mb-1">Risk levels</h2>
+        <p class="text-sm text-gray-500 mb-5">Rules are evaluated in priority order. First match wins.</p>
+
+        <table class="w-full text-xs border border-gray-800 rounded-lg overflow-hidden">
+          <thead>
+            <tr class="bg-gray-900 text-gray-500 uppercase tracking-widest text-[10px]">
+              <th class="text-left px-4 py-2.5">Level</th>
+              <th class="text-left px-4 py-2.5">Rule</th>
+              <th class="text-left px-4 py-2.5">Condition</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-800">
+            <tr class="bg-gray-950 hover:bg-gray-900/50">
+              <td class="px-4 py-2.5"><span class="px-2 py-0.5 rounded-full bg-red-900 text-red-300 font-bold">HIGH</span></td>
+              <td class="px-4 py-2.5 text-gray-300">critical_type</td>
+              <td class="px-4 py-2.5 text-gray-500">Any <code class="text-gray-400">:id</code> or <code class="text-gray-400">:secret</code> detected</td>
+            </tr>
+            <tr class="bg-gray-950 hover:bg-gray-900/50">
+              <td class="px-4 py-2.5"><span class="px-2 py-0.5 rounded-full bg-red-900 text-red-300 font-bold">HIGH</span></td>
+              <td class="px-4 py-2.5 text-gray-300">identity_reconstruction</td>
+              <td class="px-4 py-2.5 text-gray-500"><code class="text-gray-400">:dob</code> + <code class="text-gray-400">:person</code> together</td>
+            </tr>
+            <tr class="bg-gray-950 hover:bg-gray-900/50">
+              <td class="px-4 py-2.5"><span class="px-2 py-0.5 rounded-full bg-red-900 text-red-300 font-bold">HIGH</span></td>
+              <td class="px-4 py-2.5 text-gray-300">mosaic_profile</td>
+              <td class="px-4 py-2.5 text-gray-500">3+ types from {person, org, location, email, phone, dob}</td>
+            </tr>
+            <tr class="bg-gray-950 hover:bg-gray-900/50">
+              <td class="px-4 py-2.5"><span class="px-2 py-0.5 rounded-full bg-yellow-900 text-yellow-300 font-bold">MEDIUM</span></td>
+              <td class="px-4 py-2.5 text-gray-300">multiple_sensitive</td>
+              <td class="px-4 py-2.5 text-gray-500">2+ of {email, phone, address, ip}</td>
+            </tr>
+            <tr class="bg-gray-950 hover:bg-gray-900/50">
+              <td class="px-4 py-2.5"><span class="px-2 py-0.5 rounded-full bg-yellow-900 text-yellow-300 font-bold">MEDIUM</span></td>
+              <td class="px-4 py-2.5 text-gray-300">single_sensitive</td>
+              <td class="px-4 py-2.5 text-gray-500">1 of {email, phone, address, ip, dob}</td>
+            </tr>
+            <tr class="bg-gray-950 hover:bg-gray-900/50">
+              <td class="px-4 py-2.5"><span class="px-2 py-0.5 rounded-full bg-yellow-900 text-yellow-300 font-bold">MEDIUM</span></td>
+              <td class="px-4 py-2.5 text-gray-300">person_with_context</td>
+              <td class="px-4 py-2.5 text-gray-500"><code class="text-gray-400">:person</code> + any other type</td>
+            </tr>
+            <tr class="bg-gray-950 hover:bg-gray-900/50">
+              <td class="px-4 py-2.5"><span class="px-2 py-0.5 rounded-full bg-green-900 text-green-300 font-bold">LOW</span></td>
+              <td class="px-4 py-2.5 text-gray-300">person_only</td>
+              <td class="px-4 py-2.5 text-gray-500">Name only, no other context</td>
+            </tr>
+            <tr class="bg-gray-950 hover:bg-gray-900/50">
+              <td class="px-4 py-2.5"><span class="px-2 py-0.5 rounded-full bg-green-900 text-green-300 font-bold">LOW</span></td>
+              <td class="px-4 py-2.5 text-gray-300">clean</td>
+              <td class="px-4 py-2.5 text-gray-500">No findings</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <div class="border-t border-gray-800"></div>
+
+      <!-- Policy -->
+      <section id="policy">
+        <h2 class="text-lg font-bold text-white mb-1">Policy</h2>
+        <p class="text-sm text-gray-500 mb-5">Each risk level maps to a policy action. Configurable per level via env vars.</p>
+
+        <table class="w-full text-xs border border-gray-800 rounded-lg overflow-hidden mb-4">
+          <thead>
+            <tr class="bg-gray-900 text-gray-500 uppercase tracking-widest text-[10px]">
+              <th class="text-left px-4 py-2.5">Risk</th>
+              <th class="text-left px-4 py-2.5">Default</th>
+              <th class="text-left px-4 py-2.5">Behaviour</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-800">
+            <tr class="bg-gray-950 hover:bg-gray-900/50">
+              <td class="px-4 py-2.5"><span class="px-2 py-0.5 rounded-full bg-green-900 text-green-300 font-bold">LOW</span></td>
+              <td class="px-4 py-2.5 text-gray-300">allow</td>
+              <td class="px-4 py-2.5 text-gray-500">Request forwarded as-is</td>
+            </tr>
+            <tr class="bg-gray-950 hover:bg-gray-900/50">
+              <td class="px-4 py-2.5"><span class="px-2 py-0.5 rounded-full bg-yellow-900 text-yellow-300 font-bold">MEDIUM</span></td>
+              <td class="px-4 py-2.5 text-gray-300">sanitize</td>
+              <td class="px-4 py-2.5 text-gray-500">Sensitive values replaced with placeholders, then forwarded</td>
+            </tr>
+            <tr class="bg-gray-950 hover:bg-gray-900/50">
+              <td class="px-4 py-2.5"><span class="px-2 py-0.5 rounded-full bg-red-900 text-red-300 font-bold">HIGH</span></td>
+              <td class="px-4 py-2.5 text-gray-300">block</td>
+              <td class="px-4 py-2.5 text-gray-500">Request rejected with 422, LLM not called</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <p class="text-xs text-gray-600">Override defaults: <code class="text-gray-400">PROMPT_PROTECT_POLICY_LOW</code> · <code class="text-gray-400">PROMPT_PROTECT_POLICY_MEDIUM</code> · <code class="text-gray-400">PROMPT_PROTECT_POLICY_HIGH</code></p>
+        <p class="text-xs text-gray-600 mt-1">Valid values: <code class="text-gray-400">allow</code> · <code class="text-gray-400">sanitize</code> · <code class="text-gray-400">block</code></p>
+      </section>
+
+      <div class="border-t border-gray-800"></div>
+
+      <!-- Masking -->
+      <section id="masking">
+        <h2 class="text-lg font-bold text-white mb-1">Masking</h2>
+        <p class="text-sm text-gray-500 mb-4">When action is <code class="text-indigo-400">sanitize</code>, sensitive values are replaced with stable typed placeholders.</p>
+
+        <pre class="bg-gray-900 border border-gray-800 rounded-lg px-4 py-3 text-sm text-gray-300 overflow-x-auto leading-relaxed">James Carter         → [PERSON_1]
+john@example.com     → [EMAIL_1]
+555-123-4567         → [PHONE_1]
+123-45-6789          → [ID_1]
+192.168.1.1          → [IP_1]
+sk-abc123...         → [SECRET_1]
+DOB: 01/15/1990      → [DOB_1]</pre>
+
+        <p class="text-xs text-gray-600 mt-3">
+          Placeholders are stable within a request — the same value always maps to the same placeholder,
+          so the LLM response remains coherent. The placeholder-to-original mapping is returned in the response body.
+        </p>
+      </section>
+
+      <div class="border-t border-gray-800"></div>
+
+      <!-- Response headers -->
+      <section id="headers">
+        <h2 class="text-lg font-bold text-white mb-1">Response headers</h2>
+        <p class="text-sm text-gray-500 mb-5">Every response includes these headers regardless of action taken.</p>
+
+        <table class="w-full text-xs border border-gray-800 rounded-lg overflow-hidden">
+          <thead>
+            <tr class="bg-gray-900 text-gray-500 uppercase tracking-widest text-[10px]">
+              <th class="text-left px-4 py-2.5">Header</th>
+              <th class="text-left px-4 py-2.5">Example</th>
+              <th class="text-left px-4 py-2.5">Description</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-800">
+            <tr class="bg-gray-950 hover:bg-gray-900/50">
+              <td class="px-4 py-2.5 text-gray-300">X-Prompt-Protect-Risk-Level</td>
+              <td class="px-4 py-2.5 text-gray-500">medium</td>
+              <td class="px-4 py-2.5 text-gray-500">Computed risk level</td>
+            </tr>
+            <tr class="bg-gray-950 hover:bg-gray-900/50">
+              <td class="px-4 py-2.5 text-gray-300">X-Prompt-Protect-Action</td>
+              <td class="px-4 py-2.5 text-gray-500">sanitize</td>
+              <td class="px-4 py-2.5 text-gray-500">Policy action taken</td>
+            </tr>
+            <tr class="bg-gray-950 hover:bg-gray-900/50">
+              <td class="px-4 py-2.5 text-gray-300">X-Prompt-Protect-Detected-Types</td>
+              <td class="px-4 py-2.5 text-gray-500">email,person</td>
+              <td class="px-4 py-2.5 text-gray-500">Comma-separated detected types</td>
+            </tr>
+            <tr class="bg-gray-950 hover:bg-gray-900/50">
+              <td class="px-4 py-2.5 text-gray-300">X-Prompt-Protect-Masked</td>
+              <td class="px-4 py-2.5 text-gray-500">true</td>
+              <td class="px-4 py-2.5 text-gray-500">Whether content was masked</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <div class="border-t border-gray-800"></div>
+
+      <!-- Env vars -->
+      <section id="env">
+        <h2 class="text-lg font-bold text-white mb-5">Environment variables</h2>
+
+        <table class="w-full text-xs border border-gray-800 rounded-lg overflow-hidden">
+          <thead>
+            <tr class="bg-gray-900 text-gray-500 uppercase tracking-widest text-[10px]">
+              <th class="text-left px-4 py-2.5">Variable</th>
+              <th class="text-left px-4 py-2.5">Required</th>
+              <th class="text-left px-4 py-2.5">Default</th>
+              <th class="text-left px-4 py-2.5">Description</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-800">
+            <tr class="bg-gray-950 hover:bg-gray-900/50">
+              <td class="px-4 py-2.5 text-gray-300">OPENAI_API_KEY</td>
+              <td class="px-4 py-2.5 text-red-400">yes</td>
+              <td class="px-4 py-2.5 text-gray-600">—</td>
+              <td class="px-4 py-2.5 text-gray-500">Injected when forwarding to provider</td>
+            </tr>
+            <tr class="bg-gray-950 hover:bg-gray-900/50">
+              <td class="px-4 py-2.5 text-gray-300">OPENAI_API_BASE_URL</td>
+              <td class="px-4 py-2.5 text-gray-600">no</td>
+              <td class="px-4 py-2.5 text-gray-500">https://api.openai.com</td>
+              <td class="px-4 py-2.5 text-gray-500">LLM provider base URL</td>
+            </tr>
+            <tr class="bg-gray-950 hover:bg-gray-900/50">
+              <td class="px-4 py-2.5 text-gray-300">PROMPT_PROTECT_POLICY_LOW</td>
+              <td class="px-4 py-2.5 text-gray-600">no</td>
+              <td class="px-4 py-2.5 text-gray-500">allow</td>
+              <td class="px-4 py-2.5 text-gray-500">Action for low risk</td>
+            </tr>
+            <tr class="bg-gray-950 hover:bg-gray-900/50">
+              <td class="px-4 py-2.5 text-gray-300">PROMPT_PROTECT_POLICY_MEDIUM</td>
+              <td class="px-4 py-2.5 text-gray-600">no</td>
+              <td class="px-4 py-2.5 text-gray-500">sanitize</td>
+              <td class="px-4 py-2.5 text-gray-500">Action for medium risk</td>
+            </tr>
+            <tr class="bg-gray-950 hover:bg-gray-900/50">
+              <td class="px-4 py-2.5 text-gray-300">PROMPT_PROTECT_POLICY_HIGH</td>
+              <td class="px-4 py-2.5 text-gray-600">no</td>
+              <td class="px-4 py-2.5 text-gray-500">block</td>
+              <td class="px-4 py-2.5 text-gray-500">Action for high risk</td>
+            </tr>
+            <tr class="bg-gray-950 hover:bg-gray-900/50">
+              <td class="px-4 py-2.5 text-gray-300">SPACY_ENABLED</td>
+              <td class="px-4 py-2.5 text-gray-600">no</td>
+              <td class="px-4 py-2.5 text-gray-500">true</td>
+              <td class="px-4 py-2.5 text-gray-500">Set false for regex-only mode</td>
+            </tr>
+            <tr class="bg-gray-950 hover:bg-gray-900/50">
+              <td class="px-4 py-2.5 text-gray-300">SPACY_SERVICE_URL</td>
+              <td class="px-4 py-2.5 text-gray-600">no</td>
+              <td class="px-4 py-2.5 text-gray-500">http://spacy:5001</td>
+              <td class="px-4 py-2.5 text-gray-500">spaCy sidecar URL</td>
+            </tr>
+            <tr class="bg-gray-950 hover:bg-gray-900/50">
+              <td class="px-4 py-2.5 text-gray-300">SPACY_MODEL</td>
+              <td class="px-4 py-2.5 text-gray-600">no</td>
+              <td class="px-4 py-2.5 text-gray-500">en_core_web_sm</td>
+              <td class="px-4 py-2.5 text-gray-500">en_core_web_sm (fast) or en_core_web_trf (accurate, ~2 GB RAM)</td>
+            </tr>
+            <tr class="bg-gray-950 hover:bg-gray-900/50">
+              <td class="px-4 py-2.5 text-gray-300">CORS_ORIGINS</td>
+              <td class="px-4 py-2.5 text-gray-600">no</td>
+              <td class="px-4 py-2.5 text-gray-500">*</td>
+              <td class="px-4 py-2.5 text-gray-500">Allowed CORS origins</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <div class="border-t border-gray-800"></div>
+
+      <!-- ── SCENARIOS ──────────────────────────────────────────────────────── -->
+      <div>
+        <p class="text-xs text-gray-500 uppercase tracking-widest mb-1">Scenarios</p>
+        <p class="text-sm text-gray-600">Real request/response pairs for each major case.</p>
+      </div>
+
+      <!-- Scenario: Dry run -->
+      <section id="scenario-dryrun">
+        <div class="flex items-center gap-3 mb-3">
+          <h3 class="text-base font-bold text-white">Dry run</h3>
+          <span class="text-xs px-2 py-0.5 rounded-full bg-gray-800 text-gray-400">no API key needed</span>
+        </div>
+        <p class="text-sm text-gray-500 mb-4">
+          Add <code class="text-indigo-400">"dry_run": true</code> to run the full pipeline without forwarding to OpenAI.
+          Useful for testing and CI.
+        </p>
+
+        <div class="space-y-3">
+          <div>
+            <p class="text-xs text-gray-600 uppercase tracking-widest mb-1.5">Request</p>
+            <pre class="bg-gray-900 border border-gray-800 rounded-lg px-4 py-3 text-xs overflow-x-auto leading-relaxed">{
+  <span class="token-key">"model"</span>: <span class="token-str">"gpt-4o"</span>,
+  <span class="token-key">"dry_run"</span>: <span class="token-bool">true</span>,
+  <span class="token-key">"messages"</span>: [
+    { <span class="token-key">"role"</span>: <span class="token-str">"user"</span>, <span class="token-key">"content"</span>: <span class="token-str">"My SSN is 123-45-6789"</span> }
+  ]
+}</pre>
+          </div>
+          <div>
+            <p class="text-xs text-gray-600 uppercase tracking-widest mb-1.5">Response — 422 Blocked</p>
+            <pre class="bg-gray-900 border border-red-900/40 rounded-lg px-4 py-3 text-xs overflow-x-auto leading-relaxed">{
+  <span class="token-key">"error"</span>: <span class="token-str">"blocked"</span>,
+  <span class="token-key">"risk_level"</span>: <span class="token-str">"high"</span>,
+  <span class="token-key">"risk_explanation"</span>: {
+    <span class="token-key">"rule"</span>: <span class="token-str">"critical_type"</span>,
+    <span class="token-key">"reason"</span>: <span class="token-str">"Government or financial ID detected"</span>,
+    <span class="token-key">"triggered_by"</span>: [<span class="token-str">"id"</span>],
+    <span class="token-key">"detected_values"</span>: [<span class="token-str">"123-45-6789"</span>]
+  },
+  <span class="token-key">"messages"</span>: [
+    {
+      <span class="token-key">"role"</span>: <span class="token-str">"user"</span>,
+      <span class="token-key">"findings"</span>: [{ <span class="token-key">"type"</span>: <span class="token-str">"id"</span>, <span class="token-key">"value"</span>: <span class="token-str">"123-45-6789"</span> }]
+    }
+  ]
+}</pre>
+          </div>
+        </div>
+      </section>
+
+      <div class="border-t border-gray-800"></div>
+
+      <!-- Scenario: Sanitize -->
+      <section id="scenario-sanitize">
+        <div class="flex items-center gap-3 mb-3">
+          <h3 class="text-base font-bold text-white">Sanitize — email address</h3>
+          <span class="text-xs px-2 py-0.5 rounded-full bg-yellow-900 text-yellow-300 font-bold">MEDIUM</span>
+        </div>
+        <p class="text-sm text-gray-500 mb-4">
+          A single email triggers medium risk. The address is masked before the prompt reaches OpenAI.
+        </p>
+
+        <div class="space-y-3">
+          <div>
+            <p class="text-xs text-gray-600 uppercase tracking-widest mb-1.5">Request</p>
+            <pre class="bg-gray-900 border border-gray-800 rounded-lg px-4 py-3 text-xs overflow-x-auto leading-relaxed">{
+  <span class="token-key">"model"</span>: <span class="token-str">"gpt-4o"</span>,
+  <span class="token-key">"messages"</span>: [
+    { <span class="token-key">"role"</span>: <span class="token-str">"user"</span>, <span class="token-key">"content"</span>: <span class="token-str">"Forward the report to sarah.jones@acme.com"</span> }
+  ]
+}</pre>
+          </div>
+          <div>
+            <p class="text-xs text-gray-600 uppercase tracking-widest mb-1.5">What gets forwarded to OpenAI</p>
+            <pre class="bg-gray-900 border border-yellow-900/40 rounded-lg px-4 py-3 text-xs overflow-x-auto leading-relaxed">"Forward the report to <span class="bg-yellow-900/40 text-yellow-300 px-1 rounded">[EMAIL_1]</span>"</pre>
+          </div>
+          <div>
+            <p class="text-xs text-gray-600 uppercase tracking-widest mb-1.5">Response body (with LLM reply)</p>
+            <pre class="bg-gray-900 border border-gray-800 rounded-lg px-4 py-3 text-xs overflow-x-auto leading-relaxed">{
+  <span class="token-key">"risk_level"</span>: <span class="token-str">"medium"</span>,
+  <span class="token-key">"action"</span>: <span class="token-str">"sanitize"</span>,
+  <span class="token-key">"messages"</span>: [
+    {
+      <span class="token-key">"role"</span>: <span class="token-str">"user"</span>,
+      <span class="token-key">"masked_text"</span>: <span class="token-str">"Forward the report to [EMAIL_1]"</span>,
+      <span class="token-key">"mapping"</span>: { <span class="token-str">"[EMAIL_1]"</span>: <span class="token-str">"sarah.jones@acme.com"</span> },
+      <span class="token-key">"findings"</span>: [{ <span class="token-key">"type"</span>: <span class="token-str">"email"</span>, <span class="token-key">"value"</span>: <span class="token-str">"sarah.jones@acme.com"</span> }]
+    }
+  ],
+  <span class="token-key">"choices"</span>: [ <span class="token-null">/* normal OpenAI response */</span> ]
+}</pre>
+          </div>
+        </div>
+      </section>
+
+      <div class="border-t border-gray-800"></div>
+
+      <!-- Scenario: Block -->
+      <section id="scenario-block">
+        <div class="flex items-center gap-3 mb-3">
+          <h3 class="text-base font-bold text-white">Block — SSN</h3>
+          <span class="text-xs px-2 py-0.5 rounded-full bg-red-900 text-red-300 font-bold">HIGH</span>
+        </div>
+        <p class="text-sm text-gray-500 mb-4">
+          Government IDs trigger <code class="text-indigo-400">critical_type</code> immediately. Request is rejected, OpenAI is never called.
+        </p>
+
+        <div class="space-y-3">
+          <div>
+            <p class="text-xs text-gray-600 uppercase tracking-widest mb-1.5">Request</p>
+            <pre class="bg-gray-900 border border-gray-800 rounded-lg px-4 py-3 text-xs overflow-x-auto leading-relaxed">{
+  <span class="token-key">"model"</span>: <span class="token-str">"gpt-4o"</span>,
+  <span class="token-key">"messages"</span>: [
+    { <span class="token-key">"role"</span>: <span class="token-str">"user"</span>, <span class="token-key">"content"</span>: <span class="token-str">"Help me fill this form. SSN: 523-45-6789"</span> }
+  ]
+}</pre>
+          </div>
+          <div>
+            <p class="text-xs text-gray-600 uppercase tracking-widest mb-1.5">Response — 422</p>
+            <pre class="bg-gray-900 border border-red-900/40 rounded-lg px-4 py-3 text-xs overflow-x-auto leading-relaxed">{
+  <span class="token-key">"error"</span>: <span class="token-str">"blocked"</span>,
+  <span class="token-key">"risk_level"</span>: <span class="token-str">"high"</span>,
+  <span class="token-key">"risk_explanation"</span>: {
+    <span class="token-key">"rule"</span>: <span class="token-str">"critical_type"</span>,
+    <span class="token-key">"reason"</span>: <span class="token-str">"Government or financial ID detected"</span>,
+    <span class="token-key">"triggered_by"</span>: [<span class="token-str">"id"</span>],
+    <span class="token-key">"detected_values"</span>: [<span class="token-str">"523-45-6789"</span>]
+  }
+}</pre>
+          </div>
+        </div>
+      </section>
+
+      <div class="border-t border-gray-800"></div>
+
+      <!-- Scenario: Mosaic -->
+      <section id="scenario-mosaic">
+        <div class="flex items-center gap-3 mb-3">
+          <h3 class="text-base font-bold text-white">Mosaic profile — name + org + location</h3>
+          <span class="text-xs px-2 py-0.5 rounded-full bg-red-900 text-red-300 font-bold">HIGH</span>
+        </div>
+        <p class="text-sm text-gray-500 mb-4">
+          Three individually-low/medium fragments combine into a complete identity profile.
+          Each field alone would be medium or low — together they cross the mosaic threshold.
+        </p>
+
+        <div class="space-y-3">
+          <div>
+            <p class="text-xs text-gray-600 uppercase tracking-widest mb-1.5">Request</p>
+            <pre class="bg-gray-900 border border-gray-800 rounded-lg px-4 py-3 text-xs overflow-x-auto leading-relaxed">{
+  <span class="token-key">"model"</span>: <span class="token-str">"gpt-4o"</span>,
+  <span class="token-key">"messages"</span>: [{
+    <span class="token-key">"role"</span>: <span class="token-str">"user"</span>,
+    <span class="token-key">"content"</span>: <span class="token-str">"Write a LinkedIn bio for Sarah Chen, Senior Engineer at Stripe, San Francisco"</span>
+  }]
+}</pre>
+          </div>
+          <div>
+            <p class="text-xs text-gray-600 uppercase tracking-widest mb-1.5">Response — 422</p>
+            <pre class="bg-gray-900 border border-red-900/40 rounded-lg px-4 py-3 text-xs overflow-x-auto leading-relaxed">{
+  <span class="token-key">"error"</span>: <span class="token-str">"blocked"</span>,
+  <span class="token-key">"risk_level"</span>: <span class="token-str">"high"</span>,
+  <span class="token-key">"risk_explanation"</span>: {
+    <span class="token-key">"rule"</span>: <span class="token-str">"mosaic_profile"</span>,
+    <span class="token-key">"reason"</span>: <span class="token-str">"3+ identity fragments form a complete profile"</span>,
+    <span class="token-key">"triggered_by"</span>: [<span class="token-str">"person"</span>, <span class="token-str">"org"</span>, <span class="token-str">"location"</span>],
+    <span class="token-key">"threshold"</span>: <span class="token-num">3</span>
+  }
+}</pre>
+          </div>
+        </div>
+      </section>
+
+      <div class="border-t border-gray-800"></div>
+
+      <!-- Scenario: API key -->
+      <section id="scenario-secret">
+        <div class="flex items-center gap-3 mb-3">
+          <h3 class="text-base font-bold text-white">API key in prompt</h3>
+          <span class="text-xs px-2 py-0.5 rounded-full bg-red-900 text-red-300 font-bold">HIGH</span>
+        </div>
+        <p class="text-sm text-gray-500 mb-4">
+          Hardcoded credentials in pasted code are a common accidental leak. Detected as <code class="text-indigo-400">:secret</code> and blocked.
+        </p>
+
+        <div class="space-y-3">
+          <div>
+            <p class="text-xs text-gray-600 uppercase tracking-widest mb-1.5">Request</p>
+            <pre class="bg-gray-900 border border-gray-800 rounded-lg px-4 py-3 text-xs overflow-x-auto leading-relaxed">{
+  <span class="token-key">"model"</span>: <span class="token-str">"gpt-4o"</span>,
+  <span class="token-key">"messages"</span>: [{
+    <span class="token-key">"role"</span>: <span class="token-str">"user"</span>,
+    <span class="token-key">"content"</span>: <span class="token-str">"Why am I getting 401?\n\nconst client = new OpenAI({ apiKey: \"sk-proj-abc123xyz\" });"</span>
+  }]
+}</pre>
+          </div>
+          <div>
+            <p class="text-xs text-gray-600 uppercase tracking-widest mb-1.5">Response — 422</p>
+            <pre class="bg-gray-900 border border-red-900/40 rounded-lg px-4 py-3 text-xs overflow-x-auto leading-relaxed">{
+  <span class="token-key">"error"</span>: <span class="token-str">"blocked"</span>,
+  <span class="token-key">"risk_level"</span>: <span class="token-str">"high"</span>,
+  <span class="token-key">"risk_explanation"</span>: {
+    <span class="token-key">"rule"</span>: <span class="token-str">"critical_type"</span>,
+    <span class="token-key">"reason"</span>: <span class="token-str">"Credential or secret detected"</span>,
+    <span class="token-key">"triggered_by"</span>: [<span class="token-str">"secret"</span>],
+    <span class="token-key">"detected_values"</span>: [<span class="token-str">"sk-proj-abc123xyz"</span>]
+  }
+}</pre>
+          </div>
+        </div>
+      </section>
+
+      <div class="border-t border-gray-800"></div>
+
+      <!-- Scenario: Encoding evasion -->
+      <section id="scenario-encoding">
+        <div class="flex items-center gap-3 mb-3">
+          <h3 class="text-base font-bold text-white">Encoding evasion</h3>
+          <span class="text-xs px-2 py-0.5 rounded-full bg-yellow-900 text-yellow-300 font-bold">MEDIUM</span>
+        </div>
+        <p class="text-sm text-gray-500 mb-4">
+          Fullwidth Unicode characters are used to disguise an email address.
+          The text normalizer collapses them to ASCII before detection runs — bypasses all other tools, caught here.
+        </p>
+
+        <div class="space-y-3">
+          <div>
+            <p class="text-xs text-gray-600 uppercase tracking-widest mb-1.5">Request — fullwidth Unicode email</p>
+            <pre class="bg-gray-900 border border-gray-800 rounded-lg px-4 py-3 text-xs overflow-x-auto leading-relaxed">{
+  <span class="token-key">"model"</span>: <span class="token-str">"gpt-4o"</span>,
+  <span class="token-key">"messages"</span>: [{
+    <span class="token-key">"role"</span>: <span class="token-str">"user"</span>,
+    <span class="token-key">"content"</span>: <span class="token-str">"Send the file to ｓａｒａｈ．ｊｏｎｅｓ＠ａｃｍｅ．ｃｏｍ"</span>
+  }]
+}</pre>
+          </div>
+          <div>
+            <p class="text-xs text-gray-600 uppercase tracking-widest mb-1.5">After normalization (what detectors see)</p>
+            <pre class="bg-gray-900 border border-yellow-900/40 rounded-lg px-4 py-3 text-xs overflow-x-auto">"Send the file to sarah.jones@acme.com"</pre>
+          </div>
+          <div>
+            <p class="text-xs text-gray-600 uppercase tracking-widest mb-1.5">Response — sanitized</p>
+            <pre class="bg-gray-900 border border-gray-800 rounded-lg px-4 py-3 text-xs overflow-x-auto leading-relaxed">{
+  <span class="token-key">"risk_level"</span>: <span class="token-str">"medium"</span>,
+  <span class="token-key">"action"</span>: <span class="token-str">"sanitize"</span>,
+  <span class="token-key">"messages"</span>: [{
+    <span class="token-key">"masked_text"</span>: <span class="token-str">"Send the file to [EMAIL_1]"</span>,
+    <span class="token-key">"mapping"</span>: { <span class="token-str">"[EMAIL_1]"</span>: <span class="token-str">"ｓａｒａｈ．ｊｏｎｅｓ＠ａｃｍｅ．ｃｏｍ"</span> },
+    <span class="token-key">"findings"</span>: [{ <span class="token-key">"type"</span>: <span class="token-str">"email"</span>, <span class="token-key">"value"</span>: <span class="token-str">"sarah.jones@acme.com"</span> }]
+  }]
+}</pre>
+          </div>
+        </div>
+      </section>
+
+      <div class="h-16"></div>
+    </main>
+  </div>
+
+  <script>
+    // Active nav link on scroll
+    const sections = document.querySelectorAll("section[id], div[id]");
+    const navLinks = document.querySelectorAll(".nav-link");
+
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          navLinks.forEach(l => l.classList.remove("active"));
+          const active = document.querySelector(`.nav-link[href="#${entry.target.id}"]`);
+          if (active) active.classList.add("active");
+        }
+      });
+    }, { rootMargin: "-30% 0px -60% 0px" });
+
+    sections.forEach(s => observer.observe(s));
+  </script>
+</body>
+</html>
