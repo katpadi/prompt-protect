@@ -1,0 +1,103 @@
+**VEHICLE LOAN AGREEMENT**
+
+This Vehicle Loan Agreement (“Agreement”) is made on **15 March 2026**, between:
+
+**Lender:**
+James Carter
+123 Elm Street, Sydney NSW 2000
+
+**Borrower:**
+Emily Dawson
+45 Parkview Avenue, Parramatta NSW 2150
+
+---
+
+### 1. Loan Details
+
+The Lender agrees to loan the Borrower the principal sum of **AUD 25,000** (“Loan”) for the purpose of purchasing a motor vehicle.
+
+---
+
+### 2. Vehicle Details
+
+* Make & Model: 2021 Toyota Corolla
+* VIN: JTDBR32E720123456
+* Registration: ABC123 (NSW)
+
+The vehicle shall serve as collateral for the Loan.
+
+---
+
+### 3. Interest Rate
+
+The Loan shall bear interest at a fixed rate of **5.5% per annum**, calculated monthly on the outstanding balance.
+
+---
+
+### 4. Repayment Terms
+
+* Loan Term: **5 years (60 months)**
+* Monthly Payment: **AUD 477.53**
+* First Payment Due: **15 April 2026**
+* Payments shall be made via bank transfer to an account nominated by the Lender.
+
+---
+
+### 5. Early Repayment
+
+The Borrower may repay the Loan in full or in part at any time without penalty.
+
+---
+
+### 6. Default
+
+The Borrower will be in default if:
+
+* Any payment is more than **14 days late**, or
+* The Borrower fails to comply with any terms of this Agreement
+
+Upon default, the Lender may:
+
+* Demand immediate repayment of the remaining balance, and/or
+* Repossess the vehicle.
+
+---
+
+### 7. Ownership and Security
+
+* The Borrower retains possession of the vehicle.
+* The Lender holds a security interest in the vehicle until the Loan is fully repaid.
+
+---
+
+### 8. Insurance
+
+The Borrower must maintain comprehensive insurance on the vehicle, listing the Lender as an interested party.
+
+---
+
+### 9. Governing Law
+
+This Agreement shall be governed by the laws of **New South Wales, Australia**.
+
+---
+
+### 10. Entire Agreement
+
+This document constitutes the entire agreement between the parties and supersedes any prior discussions or agreements.
+
+---
+
+**Signed:**
+
+---
+
+James Carter (Lender)
+
+Date: _______________
+
+---
+
+Emily Dawson (Borrower)
+
+Date: _______________
