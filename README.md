@@ -146,6 +146,7 @@ Every response includes transparency headers:
 | `SPACY_ENABLED` | No | `true` | Set to `false` to use regex-only detection |
 | `SPACY_SERVICE_URL` | No | `http://spacy:5001` | spaCy sidecar URL |
 | `SPACY_MODEL` | No | `en_core_web_sm` | `en_core_web_sm` (default, fast) or `en_core_web_trf` (higher accuracy, ~2 GB RAM) |
+| `PROMPT_PROTECT_PROVIDER` | No | `openai` | LLM provider adapter (`openai` only — others not yet implemented) |
 
 Policy actions: `allow` · `sanitize` · `block`
 
