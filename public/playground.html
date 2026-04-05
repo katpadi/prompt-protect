@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Prompt Protect — Playground</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .placeholder-highlight {
+      background: #fef9c3; border-radius: 3px; padding: 0 3px;
+      font-weight: 600; color: #854d0e;
+    }
+    .scenario-body {
+      display: grid;
+      grid-template-rows: 0fr;
+      transition: grid-template-rows 0.25s ease;
+    }
+    .scenario-body.open {
+      grid-template-rows: 1fr;
+    }
+    .scenario-body > div {
+      overflow: hidden;
+    }
+    .chevron {
+      transition: transform 0.2s ease;
+    }
+    .chevron.open {
+      transform: rotate(180deg);
+    }
+    .fade-in {
+      animation: fadeIn 0.25s ease-in;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen font-mono">
+
+  <!-- Header -->
+  <header class="border-b border-gray-800 px-6 py-4 flex items-center gap-3">
+    <span class="text-2xl">🛡</span>
+    <div>
+      <h1 class="text-lg font-bold text-white">Prompt Protect</h1>
+      <p class="text-xs text-gray-400">See how sensitive data is detected, scored, and masked before reaching an LLM</p>
+    </div>
+    <a href="/api-docs" target="_blank"
+      class="ml-auto text-xs text-gray-500 hover:text-gray-300 border border-gray-700 hover:border-gray-500 px-3 py-1.5 rounded transition">
+      API docs
+    </a>
+  </header>
+
+  <main class="max-w-3xl mx-auto px-6 py-8 space-y-10">
+
+    <!-- Scenarios -->
+    <section>
+      <p class="text-xs text-gray-500 uppercase tracking-widest mb-4">Scenarios</p>
+      <p class="text-xs text-gray-600 mb-5">
+        Each scenario demonstrates a real-world case. Expand one to see the prompt, run the analysis, and inspect what was detected and how it was handled.
+      </p>
+      <div id="scenarios" class="space-y-2"></div>
+    </section>
+
+    <!-- Divider -->
+    <div class="border-t border-gray-800"></div>
+
+    <!-- Try your own -->
+    <section>
+      <p class="text-xs text-gray-500 uppercase tracking-widest mb-2">Try your own prompt</p>
+      <p class="text-xs text-gray-600 mb-4">Paste any text and run the full detection pipeline.</p>
+
+      <div class="space-y-3">
+        <textarea id="custom-input" rows="5"
+          placeholder="Paste your prompt here..."
+          class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:border-indigo-500 resize-none leading-relaxed"></textarea>
+
+        <div class="flex items-center gap-3">
+          <button id="custom-btn" onclick="analyzeCustom()"
+            class="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm rounded-lg font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed">
+            Analyze
+          </button>
+          <button onclick="clearCustom()"
+            class="px-4 py-2 text-sm text-gray-500 hover:text-gray-200 transition">
+            Clear
+          </button>
+          <span id="custom-loading" class="hidden text-xs text-gray-500 animate-pulse">Analyzing...</span>
+        </div>
+
+        <div id="custom-results" class="hidden fade-in"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    // ─── Scenario definitions ───────────────────────────────────────────────
+    const SCENARIOS = [
+      // ── LOW risk ──────────────────────────────────────────────────────────
+      {
+        id: "clean",
+        title: "Clean prompt",
+        description: "No sensitive data — forwarded as-is.",
+        hint: "low",
+        prompt: "What is the difference between REST and GraphQL APIs?"
+      },
+      {
+        id: "org_only",
+        title: "Organisation name only",
+        description: "A company name alone is public information — low risk.",
+        hint: "low",
+        prompt: "What are the main differences between Google and Microsoft Azure cloud services?"
+      },
+      // ── MEDIUM risk ───────────────────────────────────────────────────────
+      {
+        id: "email",
+        title: "Email address",
+        description: "A single email is a sensitive type — prompt is sanitized.",
+        hint: "medium",
+        prompt: "Please forward the quarterly report to sarah.jones@acme.com by end of day."
+      },
+      {
+        id: "phone",
+        title: "Phone number",
+        description: "A US phone number is detected and masked before the prompt is sent.",
+        hint: "medium",
+        prompt: "Call me back at 415-555-0192 when you get a chance."
+      },
+      {
+        id: "ip",
+        title: "Internal IP address",
+        description: "Private IP addresses expose network topology — treated as sensitive.",
+        hint: "medium",
+        prompt: "The database is running on 192.168.1.45. Can you help me debug the connection timeout?"
+      },
+      {
+        id: "dob_only",
+        title: "Date of birth (no name)",
+        description: "A DOB alone is medium risk. Pair it with a name and it escalates to high.",
+        hint: "medium",
+        prompt: "Please update the patient record. Date of birth: 14/03/1978. No other details on file."
+      },
+      {
+        id: "person_org",
+        title: "Person + organisation",
+        description: "Knowing someone's name and employer together reveals affiliation — medium risk.",
+        hint: "medium",
+        prompt: "Can you draft a bio for Jane Smith, Head of Engineering at Acme Corp?"
+      },
+      {
+        id: "person_location",
+        title: "Person + location",
+        description: "Name and location together reveal whereabouts — medium risk.",
+        hint: "medium",
+        prompt: "Write a short profile for John Carter, currently based in Sydney, Australia."
+      },
+      // ── HIGH risk ─────────────────────────────────────────────────────────
+      {
+        id: "identity_reconstruction",
+        title: "Name + date of birth",
+        description: "Name and DOB together are enough to reconstruct identity — escalates to high.",
+        hint: "high",
+        prompt: "Patient name: Jane Doe. Date of birth: 14/03/1978. Please summarise her appointment history."
+      },
+      {
+        id: "mosaic",
+        title: "Mosaic profile (name + org + location)",
+        description: "Three individually-medium fragments combine into a complete identity profile — unique to Prompt Protect.",
+        hint: "high",
+        prompt: "Can you write a LinkedIn summary for Sarah Chen, Senior Engineer at Stripe, based in San Francisco?"
+      },
+      {
+        id: "mixed",
+        title: "Multiple PII types",
+        description: "Two or more sensitive types together escalate to high risk.",
+        hint: "high",
+        prompt: "Hi, I'm John Smith. You can reach me at john.smith@example.com or on 555-234-5678."
+      },
+      {
+        id: "ssn",
+        title: "Social Security Number",
+        description: "Government ID numbers are critical — immediately high risk, blocked.",
+        hint: "high",
+        prompt: "Please help me fill out this tax form. My SSN is 523-45-6789 and I was born on 01/15/1985."
+      },
+      {
+        id: "passport",
+        title: "Passport number",
+        description: "Passport references are detected as ID type — high risk.",
+        hint: "high",
+        prompt: "Booking reference for passenger John Smith, passport no. AB1234567, travelling on 22 April."
+      },
+      {
+        id: "credit_card",
+        title: "Credit card number",
+        description: "Card numbers trigger high risk and are blocked before reaching the LLM.",
+        hint: "high",
+        prompt: "Process a refund for customer card 4532-1234-5678-9012, billing name Alice Johnson."
+      },
+      {
+        id: "secret",
+        title: "API key / secret leaked",
+        description: "Hardcoded credentials are critical — blocked immediately.",
+        hint: "high",
+        prompt: "Here is my code:\n\nconst client = new OpenAI({ apiKey: \"sk-proj-abcdefghijklmnopqrstuvwxyz1234567890\" });\n\nWhy am I getting a 401 error?"
+      },
+      {
+        id: "encoding_evasion",
+        title: "Encoding evasion attempt",
+        description: "Fullwidth Unicode used to disguise an email address — normalised and detected before reaching detectors.",
+        hint: "medium",
+        prompt: "Please send the file to ｓａｒａｈ．ｊｏｎｅｓ＠ａｃｍｅ．ｃｏｍ as soon as possible."
+      }
+    ];
+
+    const HINT_STYLES = {
+      low:    { badge: "bg-green-900 text-green-300",  dot: "bg-green-500",  label: "LOW"    },
+      medium: { badge: "bg-yellow-900 text-yellow-300", dot: "bg-yellow-500", label: "MEDIUM" },
+      high:   { badge: "bg-red-900 text-red-300",       dot: "bg-red-500",    label: "HIGH"   }
+    };
+
+    // ─── Build scenario cards ────────────────────────────────────────────────
+    const SECTION_LABELS = {
+      low:    { label: "Low risk",    style: "text-green-500"  },
+      medium: { label: "Medium risk", style: "text-yellow-500" },
+      high:   { label: "High risk",   style: "text-red-500"    }
+    };
+
+    function buildScenarios() {
+      const container = document.getElementById("scenarios");
+      let lastHint = null;
+
+      SCENARIOS.forEach((scenario, idx) => {
+        // Insert section header when risk level changes
+        if (scenario.hint !== lastHint) {
+          lastHint = scenario.hint;
+          const sec = document.getElementById("scenarios");
+          const header = document.createElement("p");
+          const s = SECTION_LABELS[scenario.hint];
+          header.className = `text-xs font-bold uppercase tracking-widest mt-${idx === 0 ? "0" : "5"} mb-1 ${s.style}`;
+          header.textContent = s.label;
+          container.appendChild(header);
+        }
+
+        const hint = HINT_STYLES[scenario.hint];
+        const card = document.createElement("div");
+        card.className = "border border-gray-800 rounded-lg overflow-hidden";
+        card.innerHTML = `
+          <button
+            onclick="toggleScenario('${scenario.id}')"
+            class="w-full flex items-center gap-3 px-4 py-3.5 bg-gray-900 hover:bg-gray-800/80 transition text-left group">
+            <span class="w-2 h-2 rounded-full flex-shrink-0 ${hint.dot}"></span>
+            <div class="flex-1 min-w-0">
+              <span class="text-sm font-semibold text-gray-100">${scenario.title}</span>
+              <span class="text-xs text-gray-500 ml-3">${scenario.description}</span>
+            </div>
+            <span class="text-xs px-2 py-0.5 rounded-full font-bold ${hint.badge} flex-shrink-0">${hint.label}</span>
+            <svg class="chevron w-4 h-4 text-gray-500 flex-shrink-0" id="chevron-${scenario.id}"
+              fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+            </svg>
+          </button>
+
+          <div class="scenario-body" id="body-${scenario.id}">
+            <div>
+              <div class="px-4 pb-4 pt-3 bg-gray-950 border-t border-gray-800 space-y-3">
+
+                <!-- Prompt preview -->
+                <div>
+                  <p class="text-xs text-gray-600 uppercase tracking-widest mb-1.5">Prompt</p>
+                  <pre class="text-sm text-gray-300 bg-gray-900 border border-gray-800 rounded px-3 py-2.5 whitespace-pre-wrap leading-relaxed">${escapeHtml(scenario.prompt)}</pre>
+                </div>
+
+                <!-- Run button -->
+                <div class="flex items-center gap-3">
+                  <button
+                    id="btn-${scenario.id}"
+                    onclick="analyzeScenario('${scenario.id}')"
+                    class="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs rounded-lg font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed">
+                    Run analysis
+                  </button>
+                  <span id="loading-${scenario.id}" class="hidden text-xs text-gray-500 animate-pulse">Analyzing...</span>
+                </div>
+
+                <!-- Results -->
+                <div id="result-${scenario.id}" class="hidden fade-in"></div>
+              </div>
+            </div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // ─── Toggle expand/collapse ──────────────────────────────────────────────
+    function toggleScenario(id) {
+      const body    = document.getElementById(`body-${id}`);
+      const chevron = document.getElementById(`chevron-${id}`);
+      const isOpen  = body.classList.contains("open");
+
+      // Close all others
+      document.querySelectorAll(".scenario-body.open").forEach(el => el.classList.remove("open"));
+      document.querySelectorAll(".chevron.open").forEach(el => el.classList.remove("open"));
+
+      if (!isOpen) {
+        body.classList.add("open");
+        chevron.classList.add("open");
+      }
+    }
+
+    // ─── Analyze a scenario ──────────────────────────────────────────────────
+    async function analyzeScenario(id) {
+      const scenario = SCENARIOS.find(s => s.id === id);
+      if (!scenario) return;
+
+      const btn     = document.getElementById(`btn-${id}`);
+      const loading = document.getElementById(`loading-${id}`);
+      const result  = document.getElementById(`result-${id}`);
+
+      btn.disabled = true;
+      loading.classList.remove("hidden");
+      result.classList.add("hidden");
+
+      try {
+        const data = await callApi(scenario.prompt);
+        result.innerHTML = renderResultHtml(data);
+        result.classList.remove("hidden");
+      } catch (err) {
+        result.innerHTML = `<p class="text-xs text-red-400">Error: ${escapeHtml(err.message)}</p>`;
+        result.classList.remove("hidden");
+      } finally {
+        btn.disabled = false;
+        loading.classList.add("hidden");
+      }
+    }
+
+    // ─── Custom prompt ───────────────────────────────────────────────────────
+    async function analyzeCustom() {
+      const text = document.getElementById("custom-input").value.trim();
+      if (!text) return;
+
+      const btn     = document.getElementById("custom-btn");
+      const loading = document.getElementById("custom-loading");
+      const result  = document.getElementById("custom-results");
+
+      btn.disabled = true;
+      loading.classList.remove("hidden");
+      result.classList.add("hidden");
+
+      try {
+        const data = await callApi(text);
+        result.innerHTML = renderResultHtml(data);
+        result.classList.remove("hidden");
+      } catch (err) {
+        result.innerHTML = `<p class="text-xs text-red-400">Error: ${escapeHtml(err.message)}</p>`;
+        result.classList.remove("hidden");
+      } finally {
+        btn.disabled = false;
+        loading.classList.add("hidden");
+      }
+    }
+
+    function clearCustom() {
+      document.getElementById("custom-input").value = "";
+      const result = document.getElementById("custom-results");
+      result.classList.add("hidden");
+      result.innerHTML = "";
+    }
+
+    // ─── API call ────────────────────────────────────────────────────────────
+    async function callApi(text) {
+      const res = await fetch("/v1/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "gpt-4o",
+          dry_run: true,
+          messages: [{ role: "user", content: text }]
+        })
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.json();
+    }
+
+    // ─── Render result HTML ──────────────────────────────────────────────────
+    function renderResultHtml(data) {
+      const { risk_level, action, messages } = data;
+      const allFindings = messages.flatMap(m => m.findings || []);
+      const types = [...new Set(allFindings.map(f => f.type))];
+
+      const riskStyle   = { low: "bg-green-900 text-green-300", medium: "bg-yellow-900 text-yellow-300", high: "bg-red-900 text-red-300" };
+      const actionStyle = { allow: "bg-green-900 text-green-300", sanitize: "bg-yellow-900 text-yellow-300", block: "bg-red-900 text-red-300" };
+
+      const actionDesc = {
+        allow:    "No sensitive data found — prompt forwarded as-is.",
+        sanitize: "Sensitive data masked — sanitized prompt sent to LLM.",
+        block:    "High-risk data detected — request blocked, LLM not called."
+      };
+
+      let html = `
+        <!-- Summary bar -->
+        <div class="flex flex-wrap items-center gap-3 px-3 py-2.5 bg-gray-900 border border-gray-800 rounded-lg">
+          <div class="flex items-center gap-1.5">
+            <span class="text-xs text-gray-600 uppercase tracking-widest">Risk</span>
+            <span class="px-2 py-0.5 rounded-full text-xs font-bold uppercase ${riskStyle[risk_level]}">${risk_level}</span>
+          </div>
+          <div class="w-px h-3 bg-gray-700"></div>
+          <div class="flex items-center gap-1.5">
+            <span class="text-xs text-gray-600 uppercase tracking-widest">Action</span>
+            <span class="px-2 py-0.5 rounded-full text-xs font-bold uppercase ${actionStyle[action]}">${action}</span>
+          </div>
+          <div class="w-px h-3 bg-gray-700"></div>
+          <span class="text-xs text-gray-500">${actionDesc[action]}</span>
+        </div>
+      `;
+
+      // Findings
+      if (allFindings.length) {
+        html += `
+          <div class="mt-3">
+            <p class="text-xs text-gray-600 uppercase tracking-widest mb-1.5">Detected (${allFindings.length} finding${allFindings.length > 1 ? "s" : ""})</p>
+            <div class="space-y-1">
+              ${allFindings.map(f => `
+                <div class="flex items-center gap-2 text-xs px-3 py-1.5 bg-gray-900 border border-gray-800 rounded">
+                  <span class="px-1.5 py-0.5 rounded bg-gray-800 text-gray-400 uppercase font-bold text-[10px]">${f.type}</span>
+                  <span class="text-gray-300 truncate">${escapeHtml(f.value)}</span>
+                </div>
+              `).join("")}
+            </div>
+          </div>
+        `;
+      } else {
+        html += `<p class="mt-2 text-xs text-gray-600">No sensitive data detected.</p>`;
+      }
+
+      // Sanitized output
+      messages.forEach(msg => {
+        if (action === "sanitize" && msg.masked_text && msg.masked_text !== msg.original_text) {
+          html += `
+            <div class="mt-3">
+              <p class="text-xs text-gray-600 uppercase tracking-widest mb-1.5">Masked output — what the LLM would receive</p>
+              <pre class="text-sm text-gray-300 bg-gray-900 border border-yellow-900 rounded px-3 py-2.5 whitespace-pre-wrap leading-relaxed">${highlightPlaceholders(msg.masked_text)}</pre>
+            </div>
+          `;
+
+          if (msg.mapping && Object.keys(msg.mapping).length) {
+            html += `
+              <div class="mt-2 px-3 py-2.5 bg-gray-900 border border-gray-800 rounded-lg">
+                <p class="text-xs text-gray-600 uppercase tracking-widest mb-1.5">Placeholder map</p>
+                <div class="space-y-1">
+                  ${Object.entries(msg.mapping).map(([k, v]) => `
+                    <div class="flex items-center gap-2 text-xs">
+                      <span class="placeholder-highlight">${escapeHtml(k)}</span>
+                      <span class="text-gray-600">→</span>
+                      <span class="text-gray-400">${escapeHtml(v)}</span>
+                    </div>
+                  `).join("")}
+                </div>
+              </div>
+            `;
+          }
+        }
+
+        if (action === "block") {
+          html += `
+            <div class="mt-3 px-3 py-2.5 bg-red-950/50 border border-red-900 rounded-lg">
+              <p class="text-xs text-red-500 uppercase tracking-widest">Request blocked — not forwarded to LLM</p>
+            </div>
+          `;
+        }
+      });
+
+      return html;
+    }
+
+    // ─── Helpers ─────────────────────────────────────────────────────────────
+    function highlightPlaceholders(text) {
+      if (!text) return "";
+      return escapeHtml(text).replace(
+        /\[(EMAIL|PHONE|ADDRESS|ID|PERSON|IP|SECRET|DOB)_\d+\]/g,
+        match => `<span class="placeholder-highlight">${match}</span>`
+      );
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    // ─── Init ─────────────────────────────────────────────────────────────────
+    document.addEventListener("DOMContentLoaded", () => {
+      buildScenarios();
+
+      document.getElementById("custom-input").addEventListener("keydown", e => {
+        if ((e.metaKey || e.ctrlKey) && e.key === "Enter") analyzeCustom();
+      });
+    });
+  </script>
+</body>
+</html>
