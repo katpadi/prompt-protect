@@ -2,7 +2,7 @@ module PromptProtect
   class RiskEngine
     LEVELS = %i[low medium high].freeze
 
-    CRITICAL_TYPES  = %i[id secret].freeze
+    CRITICAL_TYPES  = %i[id secret medical financial].freeze
     SENSITIVE_TYPES = %i[email phone address ip dob].freeze
 
     # Mosaic profile types — individually low/medium, but assembling 3+ of these

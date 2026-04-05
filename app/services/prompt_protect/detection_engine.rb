@@ -7,7 +7,9 @@ module PromptProtect
       Detectors::IdDetector,
       Detectors::IpDetector,
       Detectors::SecretDetector,
-      Detectors::DobDetector
+      Detectors::DobDetector,
+      Detectors::MedicalDetector,
+      Detectors::FinancialDetector
     ].freeze
 
     def initialize(text)

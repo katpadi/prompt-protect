@@ -23,13 +23,18 @@ module PromptProtect
       # Matches: "Medicare 2123 45678 1", "Medicare card: 212345678 1"
       AU_MEDICARE_PATTERN = /\bmedicare\s*(?:card|no\.?|number)?\s*:?\s*\d{4}\s?\d{5}\s?\d\b/i
 
+      # Driver's license — keyword required (format varies too much by jurisdiction)
+      # Matches: "DL: A1234567", "driver's license: D123-4567-8901", "driver license number: 12345678"
+      DRIVERS_LICENSE_PATTERN = /\b(?:driver'?s?\s+licen[cs]e|driving\s+licen[cs]e|DL|DLN)\s*(?:no\.?|number|#)?\s*:?\s*[A-Z0-9][A-Z0-9\-\s]{4,14}\b/i
+
       PATTERNS = [
-        [ SSN_PATTERN,          :id ],
-        [ CREDIT_CARD_PATTERN,  :id ],
-        [ PASSPORT_PATTERN,     :id ],
-        [ IBAN_PATTERN,         :id ],
-        [ AU_TFN_PATTERN,       :id ],
-        [ AU_MEDICARE_PATTERN,  :id ]
+        [ SSN_PATTERN,              :id ],
+        [ CREDIT_CARD_PATTERN,      :id ],
+        [ PASSPORT_PATTERN,         :id ],
+        [ IBAN_PATTERN,             :id ],
+        [ AU_TFN_PATTERN,           :id ],
+        [ AU_MEDICARE_PATTERN,      :id ],
+        [ DRIVERS_LICENSE_PATTERN,  :id ]
       ].freeze
 
       def call

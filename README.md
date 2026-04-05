@@ -76,10 +76,12 @@ Prompt Protect uses a hybrid detection pipeline:
 | EmailDetector | `:email` | `user@example.com` |
 | PhoneDetector | `:phone` | `555-123-4567`, `+1 (800) 555 0100` |
 | AddressDetector | `:address` | `12 Main St, Springfield` |
-| IdDetector | `:id` | SSN `123-45-6789`, credit card `4111 1111 1111 1111` |
+| IdDetector | `:id` | SSN `123-45-6789`, credit card `4111 1111 1111 1111`, passport, IBAN, driver's license, AU Medicare/TFN |
 | IpDetector | `:ip` | `192.168.1.1`, `2001:db8::1` |
-| SecretDetector | `:secret` | Bearer tokens, API keys, `sk-...`, AWS keys |
+| SecretDetector | `:secret` | Bearer tokens, API keys, `sk-...`, AWS keys, `password = "..."` |
 | DobDetector | `:dob` | `DOB: 01/15/1990`, `born January 15, 1990` |
+| MedicalDetector | `:medical` | MRN, ICD-10 codes, NHS numbers, medications with dosage, insurance member IDs |
+| FinancialDetector | `:financial` | Bank routing numbers, account numbers, UK sort codes, SWIFT/BIC codes |
 | NerDetector | `:person` | Names via NER sidecar |
 | NerDetector | `:org` | Company and org names via NER sidecar |
 | NerDetector | `:location` | Places, countries, cities via NER sidecar |
@@ -107,7 +109,7 @@ docker run --rm ner-bench python benchmark.py
 
 | Level | Condition |
 |---|---|
-| `high` | Any `:id` or `:secret` type |
+| `high` | Any `:id`, `:secret`, `:medical`, or `:financial` type |
 | `high` | `:dob` + `:person` together (identity reconstruction) |
 | `high` | 3+ types from `{person, org, location, email, phone, dob}` (mosaic profile) |
 | `medium` | 2+ sensitive types (email, phone, address, ip) |
