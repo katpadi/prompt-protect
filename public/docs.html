@@ -147,8 +147,9 @@
         </div>
 
         <div class="mt-4 px-4 py-3 bg-gray-900 border border-indigo-900/50 rounded-lg text-xs text-gray-400 space-y-1.5 leading-relaxed">
-          <p><span class="text-indigo-400 font-semibold">How auth works:</span> The proxy strips the <code class="text-gray-300">Authorization</code> header your client sends and replaces it with its own <code class="text-gray-300">OPENAI_API_KEY</code> when forwarding to OpenAI.</p>
-          <p>Your API key belongs in the proxy's <code class="text-gray-300">.env</code>, not in client code. The client still needs a non-empty string for <code class="text-gray-300">api_key</code> to satisfy the SDK's own validation — but that value is never forwarded.</p>
+          <p><span class="text-indigo-400 font-semibold">How auth works:</span> The proxy strips whatever <code class="text-gray-300">Authorization</code> header the client sends and replaces it with its own <code class="text-gray-300">OPENAI_API_KEY</code> before forwarding to OpenAI.</p>
+          <p><span class="text-gray-300">The API key lives in the proxy's <code class="text-gray-200">.env</code></span> — configured once by whoever runs the proxy (you, your platform team, your infra). Client applications don't need it and shouldn't have it.</p>
+          <p>The SDK still requires a non-empty <code class="text-gray-300">api_key</code> argument or it throws before making any request. Pass your real key, a placeholder, or set <code class="text-gray-300">OPENAI_API_KEY</code> in the client's env — the value is stripped at the proxy and never reaches OpenAI.</p>
         </div>
       </section>
 

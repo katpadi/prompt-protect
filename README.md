@@ -72,7 +72,7 @@ curl http://localhost:3000/v1/chat/completions \
   -d '{"model":"gpt-4o","messages":[{"role":"user","content":"Hello!"}]}'
 ```
 
-**How auth works:** The proxy strips the `Authorization` header your client sends and replaces it with its own `OPENAI_API_KEY` when forwarding to OpenAI. Your API key belongs in the proxy's `.env`, not in client code. The client still needs a non-empty string for `api_key` to satisfy the SDK's own validation — but that value is never forwarded.
+**How auth works:** The proxy strips whatever `Authorization` header the client sends and replaces it with its own `OPENAI_API_KEY` before forwarding to OpenAI. The API key lives in the proxy's `.env` — configured once by whoever runs the proxy. Client applications don't need it and shouldn't have it. The SDK still requires a non-empty `api_key` argument or it throws before making any request — pass your real key, a placeholder, or set `OPENAI_API_KEY` in the client's env. Either way, the value is stripped at the proxy and never reaches OpenAI.
 
 ## Dry run mode
 
