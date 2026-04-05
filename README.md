@@ -173,7 +173,8 @@ Every response includes transparency headers:
 | `NER_BACKEND` | No | `spacy` | NER backend: `spacy`, `gliner`, or `hf` |
 | `SPACY_MODEL` | No | `en_core_web_sm` | spaCy model — `en_core_web_sm` (fast) or `en_core_web_trf` (accurate, ~2 GB RAM). Only used when `NER_BACKEND=spacy` |
 | `GLINER_MODEL` | No | `urchade/gliner_small-v2.1` | GLiNER model to load. Only used when `NER_BACKEND=gliner` |
-| `PROMPT_PROTECT_PROVIDER` | No | `openai` | LLM provider adapter (`openai` only — others not yet implemented) |
+| `HF_NER_MODEL` | No | `dslim/bert-base-NER` | HuggingFace model to load. Only used when `NER_BACKEND=hf` |
+| `PROMPT_PROTECT_PROVIDER` | No | `openai` | LLM provider (`openai` only — others not yet implemented). Can also be set per-request via `"provider"` field |
 
 Policy actions: `allow` · `sanitize` · `block`
 

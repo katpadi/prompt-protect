@@ -15,6 +15,7 @@ services:
       PROMPT_PROTECT_POLICY_HIGH: ${PROMPT_PROTECT_POLICY_HIGH:-block}
       SPACY_ENABLED: ${SPACY_ENABLED:-true}
       SPACY_SERVICE_URL: ${SPACY_SERVICE_URL:-http://spacy:5001}
+      PROMPT_PROTECT_PROVIDER: ${PROMPT_PROTECT_PROVIDER:-openai}
     depends_on:
       spacy:
         condition: service_healthy
@@ -37,7 +38,7 @@ services:
     environment:
       NER_BACKEND: ${NER_BACKEND:-spacy}
       SPACY_MODEL: ${SPACY_MODEL:-en_core_web_sm}
-      GLINER_MODEL: ${GLINER_MODEL:-urchade/gliner-small-v2.1}
+      GLINER_MODEL: ${GLINER_MODEL:-urchade/gliner_small-v2.1}
       HF_NER_MODEL: ${HF_NER_MODEL:-dslim/bert-base-NER}
     restart: unless-stopped
     healthcheck:
