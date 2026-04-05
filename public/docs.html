@@ -90,7 +90,7 @@
           <div>
             <p class="text-xs text-gray-500 uppercase tracking-widest mb-2">2. Run</p>
             <pre class="bg-gray-900 border border-gray-800 rounded-lg px-4 py-3 text-sm text-gray-300 overflow-x-auto">docker compose up</pre>
-            <p class="text-xs text-gray-600 mt-1.5">Proxy on <code class="text-indigo-400">http://localhost:3000</code> · spaCy NER sidecar on <code class="text-indigo-400">http://localhost:5001</code></p>
+            <p class="text-xs text-gray-600 mt-1.5">Proxy on <code class="text-indigo-400">http://localhost:3000</code> · NER sidecar on <code class="text-indigo-400">http://localhost:5001</code></p>
           </div>
 
           <div>
@@ -122,8 +122,9 @@
       <section id="detection">
         <h2 class="text-lg font-bold text-white mb-1">Detection</h2>
         <p class="text-sm text-gray-500 mb-5">
-          Hybrid pipeline: regex detectors run first, then spaCy NER for entity types that need linguistic context.
+          Hybrid pipeline: regex detectors run first, then the NER sidecar for entity types that need linguistic context.
           Text is normalized before detection — Unicode tricks, zero-width characters, and Base64 blobs are collapsed first.
+          The NER backend is swappable: <code class="text-gray-400">spaCy</code> (default, fast), <code class="text-gray-400">GLiNER</code> (better recall, ~30× slower), or <code class="text-gray-400">HuggingFace</code>.
         </p>
 
         <table class="w-full text-xs border border-gray-800 rounded-lg overflow-hidden">
@@ -173,23 +174,23 @@
             <tr class="bg-gray-950 hover:bg-gray-900/50">
               <td class="px-4 py-2.5 text-gray-300">NerDetector</td>
               <td class="px-4 py-2.5"><code class="text-indigo-400">:person</code></td>
-              <td class="px-4 py-2.5 text-gray-500">Full names via spaCy</td>
+              <td class="px-4 py-2.5 text-gray-500">Full names via NER sidecar</td>
             </tr>
             <tr class="bg-gray-950 hover:bg-gray-900/50">
               <td class="px-4 py-2.5 text-gray-300">NerDetector</td>
               <td class="px-4 py-2.5"><code class="text-indigo-400">:org</code></td>
-              <td class="px-4 py-2.5 text-gray-500">Company and org names via spaCy</td>
+              <td class="px-4 py-2.5 text-gray-500">Company and org names via NER sidecar</td>
             </tr>
             <tr class="bg-gray-950 hover:bg-gray-900/50">
               <td class="px-4 py-2.5 text-gray-300">NerDetector</td>
               <td class="px-4 py-2.5"><code class="text-indigo-400">:location</code></td>
-              <td class="px-4 py-2.5 text-gray-500">Countries, cities, places via spaCy</td>
+              <td class="px-4 py-2.5 text-gray-500">Countries, cities, places via NER sidecar</td>
             </tr>
           </tbody>
         </table>
 
         <div class="mt-3 px-4 py-3 bg-gray-900 border border-gray-800 rounded-lg text-xs text-gray-500">
-          If the spaCy sidecar is unavailable, NER detection falls back to heuristic regex-based person detection.
+          If the NER sidecar is unavailable, detection falls back to heuristic regex-based person detection.
           Set <code class="text-gray-400">SPACY_ENABLED=false</code> to skip it entirely.
         </div>
       </section>
@@ -409,13 +410,25 @@ DOB: 01/15/1990      → [DOB_1]</pre>
               <td class="px-4 py-2.5 text-gray-300">SPACY_SERVICE_URL</td>
               <td class="px-4 py-2.5 text-gray-600">no</td>
               <td class="px-4 py-2.5 text-gray-500">http://spacy:5001</td>
-              <td class="px-4 py-2.5 text-gray-500">spaCy sidecar URL</td>
+              <td class="px-4 py-2.5 text-gray-500">NER sidecar URL</td>
+            </tr>
+            <tr class="bg-gray-950 hover:bg-gray-900/50">
+              <td class="px-4 py-2.5 text-gray-300">NER_BACKEND</td>
+              <td class="px-4 py-2.5 text-gray-600">no</td>
+              <td class="px-4 py-2.5 text-gray-500">spacy</td>
+              <td class="px-4 py-2.5 text-gray-500">NER backend: <code class="text-gray-400">spacy</code>, <code class="text-gray-400">gliner</code>, or <code class="text-gray-400">hf</code></td>
             </tr>
             <tr class="bg-gray-950 hover:bg-gray-900/50">
               <td class="px-4 py-2.5 text-gray-300">SPACY_MODEL</td>
               <td class="px-4 py-2.5 text-gray-600">no</td>
               <td class="px-4 py-2.5 text-gray-500">en_core_web_sm</td>
-              <td class="px-4 py-2.5 text-gray-500">en_core_web_sm (fast) or en_core_web_trf (accurate, ~2 GB RAM)</td>
+              <td class="px-4 py-2.5 text-gray-500">spaCy model — sm (fast) or trf (accurate, ~2 GB RAM). NER_BACKEND=spacy only</td>
+            </tr>
+            <tr class="bg-gray-950 hover:bg-gray-900/50">
+              <td class="px-4 py-2.5 text-gray-300">GLINER_MODEL</td>
+              <td class="px-4 py-2.5 text-gray-600">no</td>
+              <td class="px-4 py-2.5 text-gray-500">urchade/gliner_small-v2.1</td>
+              <td class="px-4 py-2.5 text-gray-500">GLiNER model to load. NER_BACKEND=gliner only</td>
             </tr>
             <tr class="bg-gray-950 hover:bg-gray-900/50">
               <td class="px-4 py-2.5 text-gray-300">CORS_ORIGINS</td>

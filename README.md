@@ -13,7 +13,7 @@ Your App  →  Prompt Protect  →  OpenAI (or any compatible API)
 Every request through `/v1/chat/completions` is run through a pipeline:
 
 1. **Normalize** — collapses Unicode tricks and decodes Base64 so encoding evasion doesn't bypass detection
-2. **Detect** — scans message content for PII using a hybrid engine (regex + spaCy NER)
+2. **Detect** — scans message content for PII using a hybrid engine (regex + NER sidecar)
 3. **Assess** — assigns a risk level: `low`, `medium`, or `high`
 4. **Enforce** — applies policy: `allow`, `sanitize`, or `block`
 5. **Forward** — sends the (possibly masked) request to the LLM provider
@@ -80,11 +80,11 @@ Prompt Protect uses a hybrid detection pipeline:
 | IpDetector | `:ip` | `192.168.1.1`, `2001:db8::1` |
 | SecretDetector | `:secret` | Bearer tokens, API keys, `sk-...`, AWS keys |
 | DobDetector | `:dob` | `DOB: 01/15/1990`, `born January 15, 1990` |
-| NerDetector | `:person` | Names via spaCy |
-| NerDetector | `:org` | Company names via spaCy |
-| NerDetector | `:location` | Places, countries, cities via spaCy |
+| NerDetector | `:person` | Names via NER sidecar |
+| NerDetector | `:org` | Company and org names via NER sidecar |
+| NerDetector | `:location` | Places, countries, cities via NER sidecar |
 
-The spaCy service runs as a sidecar container and is called automatically. If it is unavailable, detection falls back to heuristic regex-based person detection.
+The NER sidecar runs as a separate container and is called automatically. If it is unavailable, detection falls back to heuristic regex-based person detection.
 
 ## Risk levels
 
@@ -144,8 +144,10 @@ Every response includes transparency headers:
 | `PROMPT_PROTECT_POLICY_MEDIUM` | No | `sanitize` | Action for medium risk |
 | `PROMPT_PROTECT_POLICY_HIGH` | No | `block` | Action for high risk |
 | `SPACY_ENABLED` | No | `true` | Set to `false` to use regex-only detection |
-| `SPACY_SERVICE_URL` | No | `http://spacy:5001` | spaCy sidecar URL |
-| `SPACY_MODEL` | No | `en_core_web_sm` | `en_core_web_sm` (default, fast) or `en_core_web_trf` (higher accuracy, ~2 GB RAM) |
+| `SPACY_SERVICE_URL` | No | `http://spacy:5001` | NER sidecar URL |
+| `NER_BACKEND` | No | `spacy` | NER backend: `spacy`, `gliner`, or `hf` |
+| `SPACY_MODEL` | No | `en_core_web_sm` | spaCy model — `en_core_web_sm` (fast) or `en_core_web_trf` (accurate, ~2 GB RAM). Only used when `NER_BACKEND=spacy` |
+| `GLINER_MODEL` | No | `urchade/gliner_small-v2.1` | GLiNER model to load. Only used when `NER_BACKEND=gliner` |
 | `PROMPT_PROTECT_PROVIDER` | No | `openai` | LLM provider adapter (`openai` only — others not yet implemented) |
 
 Policy actions: `allow` · `sanitize` · `block`
@@ -166,6 +168,6 @@ SPACY_ENABLED=false bundle exec rspec
 ## Tech stack
 
 - Ruby 3.4 / Rails 8 API
-- Python 3.12 / FastAPI / spaCy (NER sidecar)
+- Python 3.12 / FastAPI (NER sidecar — backends: spaCy, GLiNER, HuggingFace)
 - Faraday (HTTP client)
 - Docker + docker compose
