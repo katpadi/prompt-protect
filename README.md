@@ -40,7 +40,7 @@ Change your OpenAI client's base URL to point at the proxy. That's the entire in
 from openai import OpenAI
 
 client = OpenAI(
-    api_key="not-needed",  # Prompt Protect injects OPENAI_API_KEY when forwarding
+    api_key="your-openai-api-key",  # or omit if OPENAI_API_KEY is set in your env
     base_url="http://localhost:3000/v1"
 )
 
@@ -55,7 +55,7 @@ response = client.chat.completions.create(
 import OpenAI from "openai";
 
 const client = new OpenAI({
-  apiKey: "not-needed",
+  apiKey: "your-openai-api-key",  // or omit if OPENAI_API_KEY is set in your env
   baseURL: "http://localhost:3000/v1",
 });
 
@@ -72,7 +72,7 @@ curl http://localhost:3000/v1/chat/completions \
   -d '{"model":"gpt-4o","messages":[{"role":"user","content":"Hello!"}]}'
 ```
 
-No auth token needed from your client — Prompt Protect injects `OPENAI_API_KEY` when forwarding to the provider.
+**How auth works:** The proxy strips the `Authorization` header your client sends and replaces it with its own `OPENAI_API_KEY` when forwarding to OpenAI. Your API key belongs in the proxy's `.env`, not in client code. The client still needs a non-empty string for `api_key` to satisfy the SDK's own validation — but that value is never forwarded.
 
 ## Dry run mode
 

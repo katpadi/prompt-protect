@@ -113,7 +113,7 @@
             <pre class="bg-gray-900 border border-gray-800 rounded-lg px-4 py-3 text-sm overflow-x-auto leading-relaxed"><span class="token-key">from</span> <span class="text-gray-300">openai</span> <span class="token-key">import</span> <span class="text-gray-300">OpenAI</span>
 
 <span class="text-gray-300">client</span> = <span class="text-gray-300">OpenAI</span>(
-    <span class="token-key">api_key</span>=<span class="token-str">"not-needed"</span>,
+    <span class="token-key">api_key</span>=<span class="token-str">"your-openai-api-key"</span>,  <span class="token-null"># or omit if OPENAI_API_KEY is set in your env</span>
     <span class="token-key">base_url</span>=<span class="token-str">"http://localhost:3000/v1"</span>
 )
 
@@ -128,7 +128,7 @@
             <pre class="bg-gray-900 border border-gray-800 rounded-lg px-4 py-3 text-sm overflow-x-auto leading-relaxed"><span class="token-key">import</span> <span class="text-gray-300">OpenAI</span> <span class="token-key">from</span> <span class="token-str">"openai"</span><span class="token-punct">;</span>
 
 <span class="token-key">const</span> <span class="text-gray-300">client</span> = <span class="token-key">new</span> <span class="text-gray-300">OpenAI</span>({
-  <span class="token-key">apiKey</span>: <span class="token-str">"not-needed"</span>,
+  <span class="token-key">apiKey</span>: <span class="token-str">"your-openai-api-key"</span>,  <span class="token-null">// or omit if OPENAI_API_KEY is set in your env</span>
   <span class="token-key">baseURL</span>: <span class="token-str">"http://localhost:3000/v1"</span>,
 })<span class="token-punct">;</span>
 
@@ -146,8 +146,9 @@
           </div>
         </div>
 
-        <div class="mt-4 px-4 py-3 bg-gray-900 border border-gray-800 rounded-lg text-xs text-gray-500">
-          No <code class="text-gray-400">Authorization</code> header needed from your client — Prompt Protect injects <code class="text-gray-400">OPENAI_API_KEY</code> when forwarding.
+        <div class="mt-4 px-4 py-3 bg-gray-900 border border-indigo-900/50 rounded-lg text-xs text-gray-400 space-y-1.5 leading-relaxed">
+          <p><span class="text-indigo-400 font-semibold">How auth works:</span> The proxy strips the <code class="text-gray-300">Authorization</code> header your client sends and replaces it with its own <code class="text-gray-300">OPENAI_API_KEY</code> when forwarding to OpenAI.</p>
+          <p>Your API key belongs in the proxy's <code class="text-gray-300">.env</code>, not in client code. The client still needs a non-empty string for <code class="text-gray-300">api_key</code> to satisfy the SDK's own validation — but that value is never forwarded.</p>
         </div>
       </section>
 
