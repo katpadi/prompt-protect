@@ -1,0 +1,211 @@
+[
+  {
+    "id": "person_full_name",
+    "text": "My name is John Smith and I need help with my account.",
+    "entities": [
+      { "text": "John Smith", "label": "PERSON" }
+    ]
+  },
+  {
+    "id": "person_non_western",
+    "text": "Please process the request from Mei Lin and forward it to Rahul Sharma.",
+    "entities": [
+      { "text": "Mei Lin", "label": "PERSON" },
+      { "text": "Rahul Sharma", "label": "PERSON" }
+    ]
+  },
+  {
+    "id": "person_arabic_name",
+    "text": "The account belongs to Omar Al-Farouq, please verify.",
+    "entities": [
+      { "text": "Omar Al-Farouq", "label": "PERSON" }
+    ]
+  },
+  {
+    "id": "person_short_name",
+    "text": "Call me back — it's Ali.",
+    "entities": [
+      { "text": "Ali", "label": "PERSON" }
+    ]
+  },
+  {
+    "id": "person_in_code",
+    "text": "# Author: James Carter\ndef process_payment(amount):",
+    "entities": [
+      { "text": "James Carter", "label": "PERSON" }
+    ]
+  },
+  {
+    "id": "person_all_caps",
+    "text": "Passenger: SARAH JOHNSON, seat 14A.",
+    "entities": [
+      { "text": "SARAH JOHNSON", "label": "PERSON" }
+    ]
+  },
+  {
+    "id": "person_with_title",
+    "text": "Dr. Emily Watson will review your case.",
+    "entities": [
+      { "text": "Emily Watson", "label": "PERSON" }
+    ]
+  },
+  {
+    "id": "org_clear",
+    "text": "I work at Stripe as a software engineer.",
+    "entities": [
+      { "text": "Stripe", "label": "ORG" }
+    ]
+  },
+  {
+    "id": "org_ambiguous_apple",
+    "text": "She is a senior designer at Apple in Cupertino.",
+    "entities": [
+      { "text": "Apple", "label": "ORG" },
+      { "text": "Cupertino", "label": "GPE" }
+    ]
+  },
+  {
+    "id": "org_ambiguous_amazon",
+    "text": "The package was shipped via Amazon and should arrive tomorrow.",
+    "entities": [
+      { "text": "Amazon", "label": "ORG" }
+    ]
+  },
+  {
+    "id": "org_with_suffix",
+    "text": "Acme Corporation has been our supplier since 2019.",
+    "entities": [
+      { "text": "Acme Corporation", "label": "ORG" }
+    ]
+  },
+  {
+    "id": "org_government",
+    "text": "The claim was filed with the Department of Health.",
+    "entities": [
+      { "text": "Department of Health", "label": "ORG" }
+    ]
+  },
+  {
+    "id": "location_city",
+    "text": "Our office is based in Sydney.",
+    "entities": [
+      { "text": "Sydney", "label": "GPE" }
+    ]
+  },
+  {
+    "id": "location_country",
+    "text": "The data is stored in Germany under GDPR.",
+    "entities": [
+      { "text": "Germany", "label": "GPE" }
+    ]
+  },
+  {
+    "id": "location_ambiguous_jordan",
+    "text": "The shipment is going to Jordan next week.",
+    "entities": [
+      { "text": "Jordan", "label": "GPE" }
+    ]
+  },
+  {
+    "id": "location_neighbourhood",
+    "text": "She lives in the Mission District in San Francisco.",
+    "entities": [
+      { "text": "San Francisco", "label": "GPE" }
+    ]
+  },
+  {
+    "id": "mosaic_person_org_location",
+    "text": "Can you write a LinkedIn bio for Sarah Chen, Senior Engineer at Stripe, based in San Francisco?",
+    "entities": [
+      { "text": "Sarah Chen", "label": "PERSON" },
+      { "text": "Stripe", "label": "ORG" },
+      { "text": "San Francisco", "label": "GPE" }
+    ]
+  },
+  {
+    "id": "mosaic_person_org",
+    "text": "Draft a reference letter for James Wright, who worked at Goldman Sachs for five years.",
+    "entities": [
+      { "text": "James Wright", "label": "PERSON" },
+      { "text": "Goldman Sachs", "label": "ORG" }
+    ]
+  },
+  {
+    "id": "multiple_persons",
+    "text": "The meeting includes Alice Tan, Bob Nguyen, and Carol Davies.",
+    "entities": [
+      { "text": "Alice Tan", "label": "PERSON" },
+      { "text": "Bob Nguyen", "label": "PERSON" },
+      { "text": "Carol Davies", "label": "PERSON" }
+    ]
+  },
+  {
+    "id": "clean_no_entities",
+    "text": "What is the difference between REST and GraphQL APIs?",
+    "entities": []
+  },
+  {
+    "id": "clean_technical",
+    "text": "The server returned a 502 Bad Gateway error after the timeout.",
+    "entities": []
+  },
+  {
+    "id": "false_positive_risk_apple_fruit",
+    "text": "I had an apple for breakfast this morning.",
+    "entities": []
+  },
+  {
+    "id": "false_positive_risk_amazon_river",
+    "text": "The Amazon rainforest covers most of northern Brazil.",
+    "entities": [
+      { "text": "Brazil", "label": "GPE" }
+    ]
+  },
+  {
+    "id": "false_positive_risk_jordan_person",
+    "text": "Jordan played basketball last night and scored 30 points.",
+    "entities": []
+  },
+  {
+    "id": "person_in_email_context",
+    "text": "Forward this to the team lead, Maria Santos, at her work address.",
+    "entities": [
+      { "text": "Maria Santos", "label": "PERSON" }
+    ]
+  },
+  {
+    "id": "person_hyphenated",
+    "text": "The report was submitted by Anne-Marie Dubois yesterday.",
+    "entities": [
+      { "text": "Anne-Marie Dubois", "label": "PERSON" }
+    ]
+  },
+  {
+    "id": "org_startup_no_suffix",
+    "text": "We recently integrated with Plaid for payment processing.",
+    "entities": [
+      { "text": "Plaid", "label": "ORG" }
+    ]
+  },
+  {
+    "id": "location_implicit",
+    "text": "The conference is being held in Tokyo next month.",
+    "entities": [
+      { "text": "Tokyo", "label": "GPE" }
+    ]
+  },
+  {
+    "id": "mixed_person_location",
+    "text": "John Carter is currently based in Melbourne, Australia.",
+    "entities": [
+      { "text": "John Carter", "label": "PERSON" },
+      { "text": "Melbourne", "label": "GPE" },
+      { "text": "Australia", "label": "GPE" }
+    ]
+  },
+  {
+    "id": "person_firstname_only_ambiguous",
+    "text": "Ask Emma to review the PR when she's available.",
+    "entities": []
+  }
+]
