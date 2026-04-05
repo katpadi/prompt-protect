@@ -9,17 +9,30 @@ RUN apt-get update -qq && \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# When using the transformer model, install CPU-only torch + spacy-transformers.
-# Skipped for en_core_web_sm to keep the default image small (~200 MB).
+# Backend-specific dependencies
+ARG NER_BACKEND=spacy
 ARG SPACY_MODEL=en_core_web_sm
-RUN if [ "$SPACY_MODEL" = "en_core_web_trf" ]; then \
-      pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu && \
-      pip install --no-cache-dir spacy-transformers; \
+
+# spaCy backend: optionally install transformer support and download model
+RUN if [ "$NER_BACKEND" = "spacy" ]; then \
+      if [ "$SPACY_MODEL" = "en_core_web_trf" ]; then \
+        pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu && \
+        pip install --no-cache-dir spacy-transformers; \
+      fi && \
+      python -m spacy download ${SPACY_MODEL}; \
     fi
 
-RUN python -m spacy download ${SPACY_MODEL}
+# GLiNER backend
+RUN if [ "$NER_BACKEND" = "gliner" ]; then \
+      pip install --no-cache-dir gliner; \
+    fi
 
-COPY main.py .
+# HuggingFace backend
+RUN if [ "$NER_BACKEND" = "hf" ]; then \
+      pip install --no-cache-dir transformers torch --index-url https://download.pytorch.org/whl/cpu; \
+    fi
+
+COPY . .
 
 EXPOSE 5001
 

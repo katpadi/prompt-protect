@@ -1,19 +1,29 @@
 import os
-import spacy
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from pydantic import BaseModel
 
-app = FastAPI(title="Prompt Protect — spaCy NER Service")
+from backends.spacy_backend import SpacyBackend
+from backends.gliner_backend import GlinerBackend
+from backends.hf_backend import HuggingFaceBackend
 
-MODEL_NAME = os.getenv("SPACY_MODEL", "en_core_web_sm")
+app = FastAPI(title="Prompt Protect — NER Service")
 
-try:
-    nlp = spacy.load(MODEL_NAME)
-except OSError:
+BACKENDS = {
+    "spacy":  SpacyBackend,
+    "gliner": GlinerBackend,
+    "hf":     HuggingFaceBackend,
+}
+
+NER_BACKEND = os.getenv("NER_BACKEND", "spacy").lower()
+
+if NER_BACKEND not in BACKENDS:
     raise RuntimeError(
-        f"spaCy model '{MODEL_NAME}' not found. "
-        f"Run: python -m spacy download {MODEL_NAME}"
+        f"Unknown NER_BACKEND '{NER_BACKEND}'. "
+        f"Available: {', '.join(BACKENDS.keys())}"
     )
+
+backend = BACKENDS[NER_BACKEND]()
+backend.load()
 
 
 class DetectRequest(BaseModel):
@@ -33,7 +43,11 @@ class DetectResponse(BaseModel):
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "model": MODEL_NAME}
+    return {
+        "status":  "ok",
+        "backend": NER_BACKEND,
+        "model":   backend.model_name(),
+    }
 
 
 @app.post("/detect", response_model=DetectResponse)
@@ -41,11 +55,5 @@ def detect(body: DetectRequest):
     if not body.text.strip():
         return DetectResponse(entities=[])
 
-    doc = nlp(body.text)
-
-    entities = [
-        Entity(text=ent.text, label=ent.label_, start=ent.start_char, end=ent.end_char)
-        for ent in doc.ents
-    ]
-
+    entities = [Entity(**e) for e in backend.detect(body.text)]
     return DetectResponse(entities=entities)

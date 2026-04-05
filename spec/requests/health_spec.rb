@@ -9,7 +9,7 @@ RSpec.describe "GET /health", type: :request do
         .to_return(
           status: 200,
           headers: { "Content-Type" => "application/json" },
-          body: { status: "ok", model: "en_core_web_sm" }.to_json
+          body: { status: "ok", backend: "spacy", model: "en_core_web_sm" }.to_json
         )
     end
 
@@ -21,6 +21,7 @@ RSpec.describe "GET /health", type: :request do
       expect(body["status"]).to eq("ok")
       expect(body["checks"]["app"]["status"]).to eq("ok")
       expect(body["checks"]["spacy"]["status"]).to eq("ok")
+      expect(body["checks"]["spacy"]["backend"]).to eq("spacy")
       expect(body["checks"]["spacy"]["model"]).to eq("en_core_web_sm")
     end
   end

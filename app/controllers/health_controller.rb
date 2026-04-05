@@ -17,7 +17,7 @@ class HealthController < ApplicationController
 
     response = Faraday.get("#{spacy_url}/health")
     body     = JSON.parse(response.body)
-    { status: "ok", model: body["model"] }
+    { status: "ok", backend: body["backend"], model: body["model"] }
   rescue Faraday::Error, JSON::ParserError => e
     { status: "unreachable", error: e.message }
   end
