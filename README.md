@@ -86,6 +86,31 @@ Prompt Protect uses a hybrid detection pipeline:
 
 The NER sidecar runs as a separate container and is called automatically. If it is unavailable, detection falls back to heuristic regex-based person detection.
 
+### NER backend
+
+The sidecar supports three backends, swappable via `NER_BACKEND`:
+
+| Backend | Default | F1 | Precision | Recall | Latency | Notes |
+|---|---|---|---|---|---|---|
+| `spacy` | ✓ | 75.2% | 71.7% | 79.2% | ~1.5ms | Fast, low false positives |
+| `gliner` | | 73.2% | 60.0% | 93.8% | ~41ms | Better recall, 2× false positives |
+| `hf` | | — | — | — | — | Not yet implemented |
+
+Benchmarked against 52 labeled examples covering names, orgs, locations, and false positive traps (pronouns, job titles, generic place references). Fixture set: `services/ner/fixtures/ner_fixtures.json`.
+
+**Why spaCy is the default:** GLiNER has higher recall (93.8% vs 79.2%) but produces twice as many false positives (30 vs 15 on the same fixture set). In a privacy proxy, false positives mean legitimate prompts get masked or blocked — that's a worse failure mode than occasionally missing a company name. GLiNER is worth considering if your workload is heavy on single-word org names (startups, brands) and you can tolerate the noise and 27× latency increase.
+
+To run the benchmark yourself:
+
+```bash
+# Build and run against each backend
+docker build --build-arg NER_BACKEND=spacy  -t ner-spacy  services/ner
+docker build --build-arg NER_BACKEND=gliner -t ner-gliner services/ner
+
+docker run --rm -e NER_BACKEND=spacy  ner-spacy  python benchmark.py
+docker run --rm -e NER_BACKEND=gliner ner-gliner python benchmark.py
+```
+
 ## Risk levels
 
 | Level | Condition |
