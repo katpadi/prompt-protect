@@ -207,5 +207,85 @@
     "id": "person_firstname_only_ambiguous",
     "text": "Ask Emma to review the PR when she's available.",
     "entities": []
+  },
+
+  { "id": "fp_pronoun_she", "text": "Can she review the document when available?", "entities": [] },
+  { "id": "fp_pronoun_they", "text": "They should handle the escalation.", "entities": [] },
+  { "id": "fp_job_title_standalone", "text": "Please assign this ticket to a senior engineer.", "entities": [] },
+  { "id": "fp_job_title_in_sentence", "text": "Our lead designer reviewed the mockups yesterday.", "entities": [] },
+  { "id": "fp_generic_office", "text": "Send the package to the main office.", "entities": [] },
+  { "id": "fp_work_address_generic", "text": "Please update the work address in the employee record.", "entities": [] },
+  { "id": "fp_company_generic", "text": "The company does not share data with third parties.", "entities": [] },
+  { "id": "fp_department_generic", "text": "Route this to the engineering department for review.", "entities": [] },
+  { "id": "fp_tech_product", "text": "We use Docker and Kubernetes for our deployments.", "entities": [] },
+  { "id": "fp_role_with_pronoun", "text": "The account manager said she would follow up.", "entities": [] },
+
+  {
+    "id": "person_possessive",
+    "text": "John Doe's account was flagged for suspicious activity.",
+    "entities": [{ "text": "John Doe", "label": "PERSON" }]
+  },
+  {
+    "id": "person_middle_initial",
+    "text": "The contract was signed by Robert J. Miller.",
+    "entities": [{ "text": "Robert J. Miller", "label": "PERSON" }]
+  },
+  {
+    "id": "person_common_word_first_name",
+    "text": "The report was written by Will Johnson last quarter.",
+    "entities": [{ "text": "Will Johnson", "label": "PERSON" }]
+  },
+  {
+    "id": "person_after_intro",
+    "text": "Hi, this is Grace Lee from billing.",
+    "entities": [{ "text": "Grace Lee", "label": "PERSON" }]
+  },
+
+  {
+    "id": "org_acronym_government",
+    "text": "Submit your tax documents to the IRS by April 15.",
+    "entities": [{ "text": "IRS", "label": "ORG" }]
+  },
+  {
+    "id": "org_ngo",
+    "text": "The Red Cross is coordinating the relief effort.",
+    "entities": [{ "text": "Red Cross", "label": "ORG" }]
+  },
+  {
+    "id": "org_big_tech",
+    "text": "User data was shared with Google without consent.",
+    "entities": [{ "text": "Google", "label": "ORG" }]
+  },
+  {
+    "id": "org_university_and_consulting",
+    "text": "She holds a degree from MIT and previously worked at McKinsey.",
+    "entities": [
+      { "text": "MIT", "label": "ORG" },
+      { "text": "McKinsey", "label": "ORG" }
+    ]
+  },
+  {
+    "id": "org_media",
+    "text": "The story was published by Reuters earlier today.",
+    "entities": [{ "text": "Reuters", "label": "ORG" }]
+  },
+
+  {
+    "id": "location_state",
+    "text": "The incident was reported in California.",
+    "entities": [{ "text": "California", "label": "GPE" }]
+  },
+  {
+    "id": "location_continent",
+    "text": "Our customers are spread across Europe and North America.",
+    "entities": [
+      { "text": "Europe", "label": "GPE" },
+      { "text": "North America", "label": "GPE" }
+    ]
+  },
+  {
+    "id": "location_region",
+    "text": "We are expanding into Southeast Asia next year.",
+    "entities": [{ "text": "Southeast Asia", "label": "GPE" }]
   }
 ]
