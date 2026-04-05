@@ -24,3 +24,7 @@
 # Ignore key files for decrypting credentials and more.
 /config/*.key
 
+# Local AI context and scratch files
+/.ai/
+/samples/
+
