@@ -35,6 +35,24 @@ RSpec.configure do |config|
       )
   end
 
+  # Temporarily set one or more env vars for the duration of an example,
+  # then restore each key to its original value (or delete it if it wasn't set).
+  #
+  # Usage in an around block:
+  #   around { |ex| with_env("KEY" => "value") { ex.run } }
+  #
+  # Usage inline:
+  #   with_env("KEY" => "value") { subject.call }
+  config.include(Module.new do
+    def with_env(overrides, &block)
+      originals = overrides.keys.each_with_object({}) { |k, h| h[k] = ENV[k] }
+      overrides.each { |k, v| ENV[k] = v }
+      block.call
+    ensure
+      originals.each { |k, v| v.nil? ? ENV.delete(k) : ENV[k] = v }
+    end
+  end)
+
   # Remove this line to enable support for ActiveRecord
   config.use_active_record = false
 

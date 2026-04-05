@@ -23,12 +23,7 @@ RSpec.describe "POST /v1/chat/completions", type: :request do
       headers: headers
   end
 
-  around do |example|
-    original = ENV["OPENAI_API_KEY"]
-    ENV["OPENAI_API_KEY"] = "test-key"
-    example.run
-    ENV["OPENAI_API_KEY"] = original
-  end
+  around { |example| with_env("OPENAI_API_KEY" => "test-key") { example.run } }
 
   context "when content is low risk (no sensitive data)" do
     let(:messages) { [ { "role" => "user", "content" => "What is the weather today?" } ] }
