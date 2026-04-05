@@ -34,7 +34,7 @@ module PromptProtect
     end
 
     def spacy_enabled?
-      ENV.fetch("SPACY_ENABLED", "true") != "false"
+      ENV.fetch("NER_ENABLED", "true") != "false"
     end
   end
 end

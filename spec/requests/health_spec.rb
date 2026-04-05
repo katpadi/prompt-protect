@@ -2,7 +2,7 @@ require "rails_helper"
 
 RSpec.describe "GET /health", type: :request do
   context "when spaCy is enabled and reachable" do
-    around { |example| with_env("SPACY_ENABLED" => "true") { example.run } }
+    around { |example| with_env("NER_ENABLED" => "true") { example.run } }
 
     before do
       stub_request(:get, "http://spacy:5001/health")
@@ -27,7 +27,7 @@ RSpec.describe "GET /health", type: :request do
   end
 
   context "when spaCy is unreachable" do
-    around { |example| with_env("SPACY_ENABLED" => "true") { example.run } }
+    around { |example| with_env("NER_ENABLED" => "true") { example.run } }
 
     before do
       stub_request(:get, "http://spacy:5001/health")
@@ -46,8 +46,8 @@ RSpec.describe "GET /health", type: :request do
     end
   end
 
-  context "when SPACY_ENABLED is false" do
-    around { |example| with_env("SPACY_ENABLED" => "false") { example.run } }
+  context "when NER_ENABLED is false" do
+    around { |example| with_env("NER_ENABLED" => "false") { example.run } }
 
     it "returns disabled for spacy check without making a network call" do
       get "/health"

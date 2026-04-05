@@ -191,7 +191,7 @@
 
         <div class="mt-3 px-4 py-3 bg-gray-900 border border-gray-800 rounded-lg text-xs text-gray-500">
           If the NER sidecar is unavailable, detection falls back to heuristic regex-based person detection.
-          Set <code class="text-gray-400">SPACY_ENABLED=false</code> to skip it entirely.
+          Set <code class="text-gray-400">NER_ENABLED=false</code> to skip it entirely.
         </div>
       </section>
 
@@ -401,13 +401,13 @@ DOB: 01/15/1990      → [DOB_1]</pre>
               <td class="px-4 py-2.5 text-gray-500">Action for high risk</td>
             </tr>
             <tr class="bg-gray-950 hover:bg-gray-900/50">
-              <td class="px-4 py-2.5 text-gray-300">SPACY_ENABLED</td>
+              <td class="px-4 py-2.5 text-gray-300">NER_ENABLED</td>
               <td class="px-4 py-2.5 text-gray-600">no</td>
               <td class="px-4 py-2.5 text-gray-500">true</td>
               <td class="px-4 py-2.5 text-gray-500">Set false for regex-only mode</td>
             </tr>
             <tr class="bg-gray-950 hover:bg-gray-900/50">
-              <td class="px-4 py-2.5 text-gray-300">SPACY_SERVICE_URL</td>
+              <td class="px-4 py-2.5 text-gray-300">NER_SERVICE_URL</td>
               <td class="px-4 py-2.5 text-gray-600">no</td>
               <td class="px-4 py-2.5 text-gray-500">http://spacy:5001</td>
               <td class="px-4 py-2.5 text-gray-500">NER sidecar URL</td>

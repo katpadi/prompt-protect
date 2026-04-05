@@ -168,8 +168,8 @@ Every response includes transparency headers:
 | `PROMPT_PROTECT_POLICY_LOW` | No | `allow` | Action for low risk |
 | `PROMPT_PROTECT_POLICY_MEDIUM` | No | `sanitize` | Action for medium risk |
 | `PROMPT_PROTECT_POLICY_HIGH` | No | `block` | Action for high risk |
-| `SPACY_ENABLED` | No | `true` | Set to `false` to use regex-only detection |
-| `SPACY_SERVICE_URL` | No | `http://spacy:5001` | NER sidecar URL |
+| `NER_ENABLED` | No | `true` | Set to `false` to use regex-only detection |
+| `NER_SERVICE_URL` | No | `http://spacy:5001` | NER sidecar URL |
 | `NER_BACKEND` | No | `spacy` | NER backend: `spacy`, `gliner`, or `hf` |
 | `SPACY_MODEL` | No | `en_core_web_sm` | spaCy model — `en_core_web_sm` (fast) or `en_core_web_trf` (accurate, ~2 GB RAM). Only used when `NER_BACKEND=spacy` |
 | `GLINER_MODEL` | No | `urchade/gliner_small-v2.1` | GLiNER model to load. Only used when `NER_BACKEND=gliner` |
@@ -188,7 +188,7 @@ Policy actions: `allow` · `sanitize` · `block`
 ## Running tests
 
 ```bash
-SPACY_ENABLED=false bundle exec rspec
+NER_ENABLED=false bundle exec rspec
 ```
 
 ## Tech stack

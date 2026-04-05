@@ -50,8 +50,8 @@ RSpec.describe PromptProtect::DetectionEngine do
       expect(finding.keys).to include(:type, :value, :start, :end)
     end
 
-    context "when SPACY_ENABLED is false" do
-      around { |example| with_env("SPACY_ENABLED" => "false") { example.run } }
+    context "when NER_ENABLED is false" do
+      around { |example| with_env("NER_ENABLED" => "false") { example.run } }
 
       it "uses PersonDetector instead of NerDetector" do
         text = "John Smith sent this."

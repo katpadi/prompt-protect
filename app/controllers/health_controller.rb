@@ -23,10 +23,10 @@ class HealthController < ApplicationController
   end
 
   def spacy_enabled?
-    ENV.fetch("SPACY_ENABLED", "true") != "false"
+    ENV.fetch("NER_ENABLED", "true") != "false"
   end
 
   def spacy_url
-    ENV.fetch("SPACY_SERVICE_URL", "http://spacy:5001")
+    ENV.fetch("NER_SERVICE_URL", "http://spacy:5001")
   end
 end
