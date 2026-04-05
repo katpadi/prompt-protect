@@ -54,7 +54,7 @@ module PromptProtect
           MOSAIC_THRESHOLD ]
       elsif multiple_sensitive?(types)
         sensitive = types & SENSITIVE_TYPES
-        [ :high, "multiple_sensitive",
+        [ :medium, "multiple_sensitive",
           "#{sensitive.size} sensitive types detected together (#{sensitive.map(&:to_s).join(', ')}).",
           2 ]
       elsif any_sensitive?(types)

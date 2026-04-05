@@ -154,8 +154,8 @@ RSpec.describe PromptProtect::RiskEngine do
     context "with two or more sensitive types" do
       let(:findings) { [ finding(:email), finding(:phone) ] }
 
-      it "returns :high" do
-        expect(engine.call.level).to eq(:high)
+      it "returns :medium" do
+        expect(engine.call.level).to eq(:medium)
       end
 
       it "sets rule to multiple_sensitive" do
@@ -240,8 +240,8 @@ RSpec.describe PromptProtect::RiskEngine do
       context "with 3 non-mosaic types (address, ip, phone)" do
         let(:findings) { [ finding(:address), finding(:ip), finding(:phone) ] }
 
-        it "returns :high via multiple_sensitive, not mosaic" do
-          expect(engine.call.level).to eq(:high)
+        it "returns :medium via multiple_sensitive, not mosaic" do
+          expect(engine.call.level).to eq(:medium)
         end
       end
     end

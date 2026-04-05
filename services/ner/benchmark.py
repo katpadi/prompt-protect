@@ -6,14 +6,17 @@ Loads the configured backend, runs it against fixtures/ner_fixtures.json,
 and reports precision, recall, F1 per entity type and overall, plus latency.
 
 Usage:
-  NER_BACKEND=spacy  python benchmark.py
-  NER_BACKEND=gliner python benchmark.py
-  NER_BACKEND=spacy  SPACY_MODEL=en_core_web_trf python benchmark.py
+  python benchmark.py
+  SPACY_MODEL=en_core_web_trf python benchmark.py
 
-  # Compare two backends:
-  NER_BACKEND=spacy  python benchmark.py > results_spacy.txt
-  NER_BACKEND=gliner python benchmark.py > results_gliner.txt
-  diff results_spacy.txt results_gliner.txt
+  # Compare spaCy models:
+  python benchmark.py > results_sm.txt
+  SPACY_MODEL=en_core_web_trf python benchmark.py > results_trf.txt
+  diff results_sm.txt results_trf.txt
+
+  # To benchmark GLiNER, build with the gliner backend and run in that image:
+  docker build --build-arg NER_BACKEND=gliner -t ner-gliner .
+  docker run --rm -e NER_BACKEND=gliner ner-gliner python benchmark.py
 """
 
 import json
