@@ -41,7 +41,7 @@ curl http://localhost:3000/v1/chat/completions \
   -d '{"model":"gpt-4o","messages":[{"role":"user","content":"Hello!"}]}'
 ```
 
-The API key lives in the proxy's `.env` — set once by whoever runs it. The proxy injects it when forwarding to OpenAI. Clients don't need it.
+You'll need your `OPENAI_API_KEY` in the proxy's `.env` — the same key you already use in your app. The proxy injects it when forwarding to OpenAI. Your existing client code and env setup don't change.
 
 ## Dry run mode
 

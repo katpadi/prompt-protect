@@ -112,7 +112,7 @@
   -d '{"model":"gpt-4o","messages":[{"role":"user","content":"Hello!"}]}'</pre>
 
         <div class="mt-4 px-4 py-3 bg-gray-900 border border-indigo-900/50 rounded-lg text-xs text-gray-400 leading-relaxed">
-          The API key lives in the proxy's <code class="text-gray-300">.env</code> — set once by whoever runs it. The proxy injects it when forwarding to OpenAI. Clients don't need it.
+          You'll need your <code class="text-gray-300">OPENAI_API_KEY</code> in the proxy's <code class="text-gray-300">.env</code> — the same key you already use in your app. The proxy injects it when forwarding to OpenAI. Your existing client code and env setup don't change.
         </div>
       </section>
 
