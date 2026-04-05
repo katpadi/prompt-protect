@@ -11,8 +11,9 @@ module PromptProtect
     end
 
     def initialize(payload)
-      @payload = payload
-      @adapter = Providers::Registry.current.new(payload)
+      @payload  = payload.except("provider")
+      provider  = payload["provider"] || ENV.fetch("PROMPT_PROTECT_PROVIDER", Providers::Registry::DEFAULT)
+      @adapter  = Providers::Registry.adapter_for(provider).new(@payload)
     end
 
     def call
