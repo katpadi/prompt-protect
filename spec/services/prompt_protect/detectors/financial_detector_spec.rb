@@ -37,7 +37,7 @@ RSpec.describe PromptProtect::Detectors::FinancialDetector do
       let(:text) { "Routing number: 021000021, account number: 123456789012" }
 
       it { expect(detector.call.size).to eq(2) }
-      it { expect(detector.call.map { |f| f[:type] }.uniq).to eq([:financial]) }
+      it { expect(detector.call.map { |f| f[:type] }.uniq).to eq([ :financial ]) }
     end
 
     context "when text has no financial data" do

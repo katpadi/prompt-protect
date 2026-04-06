@@ -2,11 +2,11 @@ require "rails_helper"
 
 RSpec.describe PromptProtect::Forwarder do
   let(:base_payload) do
-    { "model" => "gpt-4o", "messages" => [{ "role" => "user", "content" => "Hello" }] }
+    { "model" => "gpt-4o", "messages" => [ { "role" => "user", "content" => "Hello" } ] }
   end
 
   let(:openai_response) do
-    { "id" => "chatcmpl-123", "choices" => [{ "message" => { "role" => "assistant", "content" => "Hi" } }] }
+    { "id" => "chatcmpl-123", "choices" => [ { "message" => { "role" => "assistant", "content" => "Hi" } } ] }
   end
 
   before do
