@@ -40,6 +40,13 @@ module PromptProtect
         raise NotImplementedError, "#{self.class} must implement #auth_header"
       end
 
+      # Returns provider-specific request headers to merge into every outbound request.
+      # Default uses Authorization header. Override for providers with different auth schemes.
+      # @return [Hash]
+      def request_headers
+        { "Authorization" => auth_header }
+      end
+
       # Base URL for the provider API.
       # @return [String]
       def base_url

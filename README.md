@@ -5,7 +5,7 @@ A drop-in safety proxy for LLM calls.
 Sits between your backend and an LLM provider to detect sensitive data, assess risk, and enforce policy — before the prompt leaves your infrastructure.
 
 ```
-Your App  →  Prompt Protect  →  OpenAI (or any compatible API)
+Your App  →  Prompt Protect  →  OpenAI / Anthropic (Claude)
 ```
 
 ## How it works
@@ -41,7 +41,9 @@ curl http://localhost:3000/v1/chat/completions \
   -d '{"model":"gpt-4o","messages":[{"role":"user","content":"Hello!"}]}'
 ```
 
-You'll need your `OPENAI_API_KEY` in the proxy's `.env` — the same key you already use in your app. The proxy injects it when forwarding to OpenAI. Your existing client code and env setup don't change.
+Set `OPENAI_API_KEY` (or `ANTHROPIC_API_KEY`) in the proxy's `.env`. The proxy injects it when forwarding — your client code doesn't need to send auth.
+
+To route to Anthropic, set `PROMPT_PROTECT_PROVIDER=anthropic` in `.env`, or pass `"provider": "anthropic"` in any request body. The proxy translates the OpenAI message format to Anthropic's Messages API automatically.
 
 ## Dry run mode
 
@@ -78,10 +80,11 @@ Prompt Protect uses a hybrid detection pipeline:
 | AddressDetector | `:address` | `12 Main St, Springfield` |
 | IdDetector | `:id` | SSN `123-45-6789`, credit card `4111 1111 1111 1111`, passport, IBAN, driver's license, AU Medicare/TFN |
 | IpDetector | `:ip` | `192.168.1.1`, `2001:db8::1` |
-| SecretDetector | `:secret` | Bearer tokens, API keys, `sk-...`, AWS keys, `password = "..."` |
+| SecretDetector | `:secret` | Bearer tokens, `sk-...` OpenAI keys, AWS keys, GitHub (`ghp_`, `github_pat_`), GitLab (`glpat-`), Slack (`xoxb-`, webhooks), Azure (`AccountKey=`) |
 | DobDetector | `:dob` | `DOB: 01/15/1990`, `born January 15, 1990` |
 | MedicalDetector | `:medical` | MRN, ICD-10 codes, NHS numbers, medications with dosage, insurance member IDs |
 | FinancialDetector | `:financial` | Bank routing numbers, account numbers, UK sort codes, SWIFT/BIC codes |
+| VehicleDetector | `:vehicle` | VINs (keyword-gated, 17-char ISO), registration plates (keyword-gated) |
 | NerDetector | `:person` | Names via NER sidecar |
 | NerDetector | `:org` | Company and org names via NER sidecar |
 | NerDetector | `:location` | Places, countries, cities via NER sidecar |
@@ -112,8 +115,8 @@ docker run --rm ner-bench python benchmark.py
 | `high` | Any `:id`, `:secret`, `:medical`, or `:financial` type |
 | `high` | `:dob` + `:person` together (identity reconstruction) |
 | `high` | 3+ types from `{person, org, location, email, phone, dob}` (mosaic profile) |
-| `medium` | 2+ sensitive types (email, phone, address, ip) |
-| `medium` | Single sensitive type (email, phone, address, ip) |
+| `medium` | 2+ sensitive types (email, phone, address, ip, vehicle) |
+| `medium` | Single sensitive type (email, phone, address, ip, dob, vehicle) |
 | `low` | Person name only, or no findings |
 
 ## Policy
@@ -156,8 +159,11 @@ Every response includes transparency headers:
 
 | Variable | Required | Default | Description |
 |---|---|---|---|
-| `OPENAI_API_KEY` | Yes | — | Forwarded to the LLM provider |
-| `OPENAI_API_BASE_URL` | No | `https://api.openai.com` | LLM provider base URL |
+| `OPENAI_API_KEY` | Yes (OpenAI) | — | Injected when forwarding to OpenAI |
+| `OPENAI_API_BASE_URL` | No | `https://api.openai.com` | OpenAI base URL override |
+| `ANTHROPIC_API_KEY` | Yes (Anthropic) | — | Injected when forwarding to Anthropic |
+| `ANTHROPIC_API_BASE_URL` | No | `https://api.anthropic.com` | Anthropic base URL override |
+| `PROMPT_PROTECT_PROVIDER` | No | `openai` | LLM provider: `openai` or `anthropic`. Can also be set per-request via `"provider"` field |
 | `CORS_ORIGINS` | No | `*` | Allowed CORS origins |
 | `PROMPT_PROTECT_POLICY_LOW` | No | `allow` | Action for low risk |
 | `PROMPT_PROTECT_POLICY_MEDIUM` | No | `sanitize` | Action for medium risk |
@@ -165,7 +171,6 @@ Every response includes transparency headers:
 | `NER_ENABLED` | No | `true` | Set to `false` to use regex-only detection |
 | `NER_SERVICE_URL` | No | `http://spacy:5001` | NER sidecar URL |
 | `SPACY_MODEL` | No | `en_core_web_sm` | spaCy model — `en_core_web_sm` (fast) or `en_core_web_trf` (accurate, ~2 GB RAM) |
-| `PROMPT_PROTECT_PROVIDER` | No | `openai` | LLM provider (`openai` only — others not yet implemented). Can also be set per-request via `"provider"` field |
 
 Policy actions: `allow` · `sanitize` · `block`
 

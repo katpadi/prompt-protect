@@ -18,8 +18,8 @@ module PromptProtect
 
     def call
       response = connection.post(@adapter.endpoint) do |req|
-        req.headers["Content-Type"]  = "application/json"
-        req.headers["Authorization"] = @adapter.auth_header
+        req.headers["Content-Type"] = "application/json"
+        @adapter.request_headers.each { |k, v| req.headers[k] = v }
         req.body = @adapter.build_request.to_json
       end
 
