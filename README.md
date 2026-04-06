@@ -1,6 +1,10 @@
 # Prompt Protect
 
-A drop-in safety proxy for LLM calls.
+![Ruby](https://img.shields.io/badge/Ruby-3.4-CC342D?logo=ruby&logoColor=white)
+![Rails](https://img.shields.io/badge/Rails-8-D30001?logo=rubyonrails&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
+![License](https://img.shields.io/badge/license-MIT-green)
 
 Sits between your backend and an LLM provider to detect sensitive data, assess risk, and enforce policy — before the prompt leaves your infrastructure.
 
@@ -47,7 +51,7 @@ To route to Anthropic, set `PROMPT_PROTECT_PROVIDER=anthropic` in `.env`, or pas
 
 ## Dry run mode
 
-Add `"dry_run": true` to any request to run the full protection pipeline without forwarding to OpenAI. Returns findings, risk level, action, and masked text. No API key required.
+Add `"dry_run": true` to any request to run the full protection pipeline without forwarding to the LLM provider. Returns findings, risk level, action, and masked text. No API key required.
 
 ```bash
 curl http://localhost:3000/v1/chat/completions \
@@ -150,10 +154,13 @@ Every response includes transparency headers:
 
 | Header | Example | Description |
 |---|---|---|
-| `X-Prompt-Protect-Risk-Level` | `medium` | Computed risk level |
+| `X-Prompt-Protect-Risk-Level` | `medium` | Computed risk level for the request |
 | `X-Prompt-Protect-Action` | `sanitize` | Policy action taken |
 | `X-Prompt-Protect-Detected-Types` | `email,person` | Detected PII types |
-| `X-Prompt-Protect-Masked` | `true` | Whether content was masked |
+| `X-Prompt-Protect-Masked` | `true` | Whether request content was masked |
+| `X-Prompt-Protect-Response-Risk-Level` | `low` | Risk level of the LLM's reply |
+| `X-Prompt-Protect-Response-Detected-Types` | `person` | PII types found in the reply |
+| `X-Prompt-Protect-Response-Masked` | `false` | Whether reply content was masked |
 
 ## Environment variables
 
@@ -193,3 +200,19 @@ NER_ENABLED=false bundle exec rspec
 - Python 3.12 / FastAPI (NER sidecar — backends: spaCy, GLiNER, HuggingFace)
 - Faraday (HTTP client)
 - Docker + docker compose
+
+## Limitations
+
+Prompt Protect is a pattern-matching proxy — it catches what it can structurally identify. It does not cover:
+
+- **Unstructured sensitive content** — internal strategy docs, employee records, export-controlled material. These require semantic classification, not regex or NER.
+- **Prompt injection** — attempts to hijack LLM behavior via instruction override. Different threat model; not in scope.
+- **Multi-turn context risk** — PII fragmented across multiple conversation turns is not correlated. Each request is scanned independently.
+
+## Contributing
+
+Issues and pull requests are welcome. Open an issue first for anything beyond small fixes.
+
+## License
+
+MIT
