@@ -20,15 +20,31 @@ RSpec.describe PromptProtect::Detectors::IdDetector do
       end
     end
 
-    context "with a credit card number" do
-      let(:text) { "Card: 1234-5678-9012-3456" }
+    context "with a valid credit card number (Luhn-valid)" do
+      let(:text) { "Card: 4532015112830366" }
 
       it "returns one finding" do
         expect(detector.call.size).to eq(1)
       end
 
       it "captures the correct value" do
-        expect(detector.call.first[:value]).to eq("1234-5678-9012-3456")
+        expect(detector.call.first[:value]).to eq("4532015112830366")
+      end
+    end
+
+    context "with a credit card in grouped format (Luhn-valid)" do
+      let(:text) { "Card: 4532-0151-1283-0366" }
+
+      it "returns one finding" do
+        expect(detector.call.size).to eq(1)
+      end
+    end
+
+    context "with a numeric sequence that is not Luhn-valid" do
+      let(:text) { "Order ID: 1234-5678-9012-3456" }
+
+      it "returns no findings" do
+        expect(detector.call).to be_empty
       end
     end
 
@@ -84,8 +100,8 @@ RSpec.describe PromptProtect::Detectors::IdDetector do
       end
     end
 
-    context "with both SSN and credit card" do
-      let(:text) { "SSN 123-45-6789 and card 1234-5678-9012-3456" }
+    context "with both SSN and a valid credit card" do
+      let(:text) { "SSN 123-45-6789 and card 4532015112830366" }
 
       it "returns two findings" do
         expect(detector.call.size).to eq(2)

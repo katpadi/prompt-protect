@@ -4,7 +4,7 @@ module PromptProtect
       # US Social Security Number: 123-45-6789 or 123 45 6789
       SSN_PATTERN = /\b\d{3}[-\s]\d{2}[-\s]\d{4}\b/
 
-      # Credit card: 1234-5678-9012-3456 or with spaces
+      # Credit card: 1234-5678-9012-3456 or with spaces — Luhn-validated post-match
       CREDIT_CARD_PATTERN = /\b(?:\d{4}[-\s]?){3}\d{4}\b/
 
       # Passport — keyword required to avoid false positives
@@ -38,7 +38,27 @@ module PromptProtect
       ].freeze
 
       def call
-        PATTERNS.flat_map { |pattern, type| scan_findings(pattern, type) }
+        PATTERNS.flat_map do |pattern, type|
+          findings = scan_findings(pattern, type)
+          next findings unless pattern == CREDIT_CARD_PATTERN
+
+          findings.select { |f| luhn_valid?(f[:value].gsub(/[-\s]/, "")) }
+        end
+      end
+
+      private
+
+      def luhn_valid?(digits)
+        return false unless digits.match?(/\A\d{13,19}\z/)
+
+        sum = 0
+        digits.chars.reverse.each_with_index do |ch, i|
+          n = ch.to_i
+          n *= 2 if i.odd?
+          n -= 9 if n > 9
+          sum += n
+        end
+        (sum % 10).zero?
       end
     end
   end
