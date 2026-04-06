@@ -3,7 +3,7 @@ module PromptProtect
     LEVELS = %i[low medium high].freeze
 
     CRITICAL_TYPES  = %i[id secret medical financial].freeze
-    SENSITIVE_TYPES = %i[email phone address ip dob].freeze
+    SENSITIVE_TYPES = %i[email phone address ip dob vehicle].freeze
 
     # Mosaic profile types — individually low/medium, but assembling 3+ of these
     # in a single prompt produces a complete enough identity profile to be high risk.
