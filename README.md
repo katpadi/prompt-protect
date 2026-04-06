@@ -1,3 +1,4 @@
+
 # Prompt Protect
 
 ![Ruby](https://img.shields.io/badge/Ruby-3.4-CC342D?logo=ruby&logoColor=white)
@@ -6,213 +7,217 @@
 ![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-Sits between your backend and an LLM provider to detect sensitive data, assess risk, and enforce policy — before the prompt leaves your infrastructure.
+Small drop-in proxy that checks and scores prompts before they hit LLMs.
 
-```
-Your App  →  Prompt Protect  →  OpenAI / Anthropic (Claude)
-```
+Works with OpenAI-compatible clients. Just change the base URL.
 
-## How it works
+## Why I built this
 
-Every request through `/v1/chat/completions` is run through a pipeline:
+We're already sending real data to LLMs:
 
-1. **Normalize** — collapses Unicode tricks and decodes Base64 so encoding evasion doesn't bypass detection
-2. **Detect** — scans message content for PII using a hybrid engine (regex + NER sidecar)
-3. **Assess** — assigns a risk level: `low`, `medium`, or `high`
-4. **Enforce** — applies policy: `allow`, `sanitize`, or `block`
-5. **Forward** — sends the (possibly masked) request to the LLM provider
-6. **Scan response** — runs the same detection pass on what the LLM sends back
-7. **Respond** — returns the provider response with transparency headers attached
+- customer info in support tools  
+- logs with emails / tokens  
+- internal data from dashboards  
 
-## Quick start
+Most of the time, no one checks what actually goes out.
+
+This sits in front of your LLM calls and acts as a *pre-flight check*.
+
+## What it does
+
+Before a request goes out:
+
+- normalizes text (unicode tricks, base64, etc.)
+- detects sensitive data (regex + spaCy)
+- scores risk (low / medium / high)
+- either:
+  - allows  
+  - sanitizes  
+  - blocks  
+
+Then forwards the request if allowed.
+
+Also checks responses on the way back.
+
+## Run it
 
 ```bash
-cp .env.example .env
-# Fill in OPENAI_API_KEY in .env
-
 docker compose up
 ```
 
-The proxy is now running on `http://localhost:3000`.
+## Try it
 
-## Integration
+### Playground
 
-Point any OpenAI-compatible client at the proxy by changing the base URL. The request format is identical to OpenAI's API — no other changes needed.
+Open:
 
-```bash
-curl http://localhost:3000/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -d '{"model":"gpt-4o","messages":[{"role":"user","content":"Hello!"}]}'
-```
+http://localhost:3000/playground.html
 
-Set `OPENAI_API_KEY` (or `ANTHROPIC_API_KEY`) in the proxy's `.env`. The proxy injects it when forwarding — your client code doesn't need to send auth.
+Paste:
 
-To route to Anthropic, set `PROMPT_PROTECT_PROVIDER=anthropic` in `.env`, or pass `"provider": "anthropic"` in any request body. The proxy translates the OpenAI message format to Anthropic's Messages API automatically.
+John Smith john@email.com lives in Sydney
 
-## Dry run mode
+---
 
-Add `"dry_run": true` to any request to run the full protection pipeline without forwarding to the LLM provider. Returns findings, risk level, action, and masked text. No API key required.
+### Or curl (dry-run)
 
 ```bash
-curl http://localhost:3000/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "gpt-4o",
-    "dry_run": true,
-    "messages": [{"role":"user","content":"My SSN is 123-45-6789 and I live at 12 Main St"}]
+curl http://localhost:3000/v1/chat/completions   -H "Content-Type: application/json"   -d '{
+    "model": "gpt-4o-mini",
+    "messages": [
+      { "role": "user", "content": "John Smith john@email.com" }
+    ],
+    "dry_run": true
   }'
 ```
 
-## Playground
+### Example output
 
-Try it interactively without an OpenAI key:
-
+```json
+{
+  "risk": "HIGH",
+  "action": "SANITIZE",
+  "reason": "identity profile (name + email + location)",
+  "sanitized": "[PERSON_1] [EMAIL_1]"
+}
 ```
-http://localhost:3000/playground.html
+
+
+## Example
+
+Input:
+
+John Smith from ACME in Sydney
+
+Output:
+
+Risk: HIGH  
+Reason: identity profile (name + org + location)  
+Sanitized: [PERSON_1] from [ORG_1] in [LOCATION_1]
+
+
+## Integration (drop-in)
+
+```ruby
+client = OpenAI::Client.new(
+  api_key: ENV['OPENAI_API_KEY'],
+  uri_base: "http://localhost:3000/v1"
+)
 ```
 
-Paste any prompt and see what gets detected, what risk level is assigned, what action is taken, and what the masked output looks like — all in real time.
+## Scope
+
+- Public API is OpenAI-style (`/v1/chat/completions`)
+- Works as a drop-in for OpenAI-compatible clients
+- Internally can route to different providers
+
+## Out of Scope
+
+- being a universal LLM API gateway  
+- trying to support every provider's native format  
+- being a full data classification system  
+
+This focuses on one thing:
+
+**preventing sensitive data from being sent to LLMs**
 
 ## Detection
 
-Prompt Protect uses a hybrid detection pipeline:
+### Regex layer
 
-| Detector | Type | Examples |
-|---|---|---|
-| EmailDetector | `:email` | `user@example.com` |
-| PhoneDetector | `:phone` | `555-123-4567`, `+1 (800) 555 0100` |
-| AddressDetector | `:address` | `12 Main St, Springfield` |
-| IdDetector | `:id` | SSN `123-45-6789`, credit card `4111 1111 1111 1111`, passport, IBAN, driver's license, AU Medicare/TFN |
-| IpDetector | `:ip` | `192.168.1.1`, `2001:db8::1` |
-| SecretDetector | `:secret` | Bearer tokens, `sk-...` OpenAI keys, AWS keys, GitHub (`ghp_`, `github_pat_`), GitLab (`glpat-`), Slack (`xoxb-`, webhooks), Azure (`AccountKey=`) |
-| DobDetector | `:dob` | `DOB: 01/15/1990`, `born January 15, 1990` |
-| MedicalDetector | `:medical` | MRN, ICD-10 codes, NHS numbers, medications with dosage, insurance member IDs |
-| FinancialDetector | `:financial` | Bank routing numbers, account numbers, UK sort codes, SWIFT/BIC codes |
-| VehicleDetector | `:vehicle` | VINs (keyword-gated, 17-char ISO), registration plates (keyword-gated) |
-| NerDetector | `:person` | Names via NER sidecar |
-| NerDetector | `:org` | Company and org names via NER sidecar |
-| NerDetector | `:location` | Places, countries, cities via NER sidecar |
+- email, phone, address  
+- IDs, tokens, API keys  
+- financial + medical data  
 
-The NER sidecar runs as a separate container and is called automatically. If it is unavailable, detection falls back to heuristic regex-based person detection.
+### NER (spaCy)
 
-### NER backend
+- person names  
+- organizations  
+- locations  
 
-The sidecar uses spaCy (`en_core_web_sm` by default). Switch to the transformer model for higher accuracy at the cost of ~2 GB RAM:
+## Risk model
 
-```bash
-SPACY_MODEL=en_core_web_trf docker compose up
-```
+- HIGH
+  - IDs, secrets, financial, medical  
+  - identity reconstruction (e.g. name + DOB)  
+  - 3+ identity signals  
 
-**Why spaCy:** We benchmarked spaCy against GLiNER (a generalist zero-shot NER model) on 52 labeled examples covering names, orgs, locations, and false positive traps. GLiNER has better recall (93.8% vs 79.2%) but produces twice as many false positives (30 vs 15) and is 27× slower (41ms vs 1.5ms). In a privacy proxy, false positives cause legitimate prompts to be masked or blocked unnecessarily — that's the worse failure mode. spaCy wins on F1 (75.2% vs 73.2%) and is the better fit.
+- MEDIUM
+  - multiple signals (email + phone)
 
-Benchmark fixtures are in `services/ner/fixtures/ner_fixtures.json`. To re-run:
+- LOW
+  - weak signals (name only)
 
-```bash
-docker build -t ner-bench services/ner
-docker run --rm ner-bench python benchmark.py
-```
+## Technical Details
 
-## Risk levels
+### Request flow
 
-| Level | Condition |
-|---|---|
-| `high` | Any `:id`, `:secret`, `:medical`, or `:financial` type |
-| `high` | `:dob` + `:person` together (identity reconstruction) |
-| `high` | 3+ types from `{person, org, location, email, phone, dob}` (mosaic profile) |
-| `medium` | 2+ sensitive types (email, phone, address, ip, vehicle) |
-| `medium` | Single sensitive type (email, phone, address, ip, dob, vehicle) |
-| `low` | Person name only, or no findings |
+Client → Prompt Protect → LLM
 
-## Policy
+Pipeline:
 
-Each risk level maps to a policy action, configurable via environment variables:
+1. Normalize
+2. Detect
+3. Score
+4. Enforce
+5. Forward
 
-| Risk | Default action | What it does |
-|---|---|---|
-| `low` | `allow` | Request forwarded as-is |
-| `medium` | `sanitize` | Sensitive values masked with typed placeholders, then forwarded |
-| `high` | `block` | Request rejected, 422 returned |
+## What's interesting here
 
-## Placeholder masking
+### Cross-field risk
 
-When policy is `sanitize`, sensitive values are replaced with stable typed placeholders:
+Most tools look at entities individually.
 
-```
-James Carter         → [PERSON_1]
-john@example.com     → [EMAIL_1]
-555-123-4567         → [PHONE_1]
-123-45-6789          → [ID_1]
-192.168.1.1          → [IP_1]
-sk-abc123...         → [SECRET_1]
-```
+This looks at combinations:
 
-Placeholders are stable — the same value always maps to the same placeholder within a request, so the LLM response remains coherent.
+- name → low  
+- email → medium  
+- name + org + location → high  
 
-## Response headers
+### Handles obfuscation
 
-Every response includes transparency headers:
-
-| Header | Example | Description |
-|---|---|---|
-| `X-Prompt-Protect-Risk-Level` | `medium` | Computed risk level for the request |
-| `X-Prompt-Protect-Action` | `sanitize` | Policy action taken |
-| `X-Prompt-Protect-Detected-Types` | `email,person` | Detected PII types |
-| `X-Prompt-Protect-Masked` | `true` | Whether request content was masked |
-| `X-Prompt-Protect-Response-Risk-Level` | `low` | Risk level of the LLM's reply |
-| `X-Prompt-Protect-Response-Detected-Types` | `person` | PII types found in the reply |
-| `X-Prompt-Protect-Response-Masked` | `false` | Whether reply content was masked |
-
-## Environment variables
-
-| Variable | Required | Default | Description |
-|---|---|---|---|
-| `OPENAI_API_KEY` | Yes (OpenAI) | — | Injected when forwarding to OpenAI |
-| `OPENAI_API_BASE_URL` | No | `https://api.openai.com` | OpenAI base URL override |
-| `ANTHROPIC_API_KEY` | Yes (Anthropic) | — | Injected when forwarding to Anthropic |
-| `ANTHROPIC_API_BASE_URL` | No | `https://api.anthropic.com` | Anthropic base URL override |
-| `PROMPT_PROTECT_PROVIDER` | No | `openai` | LLM provider: `openai` or `anthropic`. Can also be set per-request via `"provider"` field |
-| `CORS_ORIGINS` | No | `*` | Allowed CORS origins |
-| `PROMPT_PROTECT_POLICY_LOW` | No | `allow` | Action for low risk |
-| `PROMPT_PROTECT_POLICY_MEDIUM` | No | `sanitize` | Action for medium risk |
-| `PROMPT_PROTECT_POLICY_HIGH` | No | `block` | Action for high risk |
-| `NER_ENABLED` | No | `true` | Set to `false` to use regex-only detection |
-| `NER_SERVICE_URL` | No | `http://spacy:5001` | NER sidecar URL |
-| `SPACY_MODEL` | No | `en_core_web_sm` | spaCy model — `en_core_web_sm` (fast) or `en_core_web_trf` (accurate, ~2 GB RAM) |
-
-Policy actions: `allow` · `sanitize` · `block`
-
-## Endpoints
-
-| Method | Path | Description |
-|---|---|---|
-| `GET` | `/health` | Health check |
-| `POST` | `/v1/chat/completions` | OpenAI-compatible proxy (supports `dry_run: true`) |
-
-## Running tests
-
-```bash
-NER_ENABLED=false bundle exec rspec
-```
-
-## Tech stack
-
-- Ruby 3.4 / Rails 8 API
-- Python 3.12 / FastAPI (NER sidecar — backends: spaCy, GLiNER, HuggingFace)
-- Faraday (HTTP client)
-- Docker + docker compose
+- fullwidth unicode  
+- zero-width characters  
+- base64 encoded text  
 
 ## Limitations
 
-Prompt Protect is a pattern-matching proxy — it catches what it can structurally identify. It does not cover:
+- OpenAI-style API only  
+- Detection is structured (not semantic)  
+- Response inspection is best-effort  
+- Does not classify full documents or business context  
 
-- **Unstructured sensitive content** — internal strategy docs, employee records, export-controlled material. These require semantic classification, not regex or NER.
-- **Prompt injection** — attempts to hijack LLM behavior via instruction override. Different threat model; not in scope.
-- **Multi-turn context risk** — PII fragmented across multiple conversation turns is not correlated. Each request is scanned independently.
+## Stack
 
-## Contributing
+- Rails 8 (proxy)  
+- Python / FastAPI (spaCy)  
+- Docker  
 
-Issues and pull requests are welcome. Open an issue first for anything beyond small fixes.
+## Roadmap
 
-## License
+### Short term
 
+- [ ] Reason engine improvements  
+- [ ] Better dry-run output consistency  
+- [ ] Improve normalization coverage  
+- [ ] Basic request logging  
+
+### Medium term
+
+- [ ] Multi-provider support  
+- [ ] Response-side enforcement improvements  
+- [ ] Configurable policies  
+
+### Longer term
+
+- [ ] Better NLP detection  
+- [ ] Domain-specific rules  
+- [ ] Optional SDKs  
+
+## Notes
+
+- runs locally, no data leaves your infra  
+- no database  
+- playground is for demo only  
+---
 MIT
