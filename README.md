@@ -370,6 +370,14 @@ The downstream app controls its own privacy policy via `policy_overrides` and `r
 
 This pattern works for HR tools, customer support platforms, legal document drafting, education products, and any other domain where user-generated text may contain PII.
 
+## Roadmap
+
+- **Streaming support** — pass through SSE chunks from the LLM provider
+- **Proxy auth** — shared secret or API key to restrict access to the proxy
+- **Custom detectors** — register domain-specific detectors without forking
+- **Metrics endpoint** — Prometheus-compatible `/metrics` for observability
+- **FastAPI rewrite** — the NER sidecar is already Python; collapsing the proxy into the same stack would eliminate the inter-service HTTP hop, simplify deployment, and make streaming and ML extensibility first-class
+
 ## Contributing
 
 ## Roadmap
