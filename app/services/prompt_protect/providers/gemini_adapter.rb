@@ -44,12 +44,13 @@ module PromptProtect
         text      = candidate&.dig("content", "parts", 0, "text").to_s
         usage     = body["usageMetadata"] || {}
 
-        finish_reason = case candidate&.dig("finishReason")
-                        when "STOP"         then "stop"
-                        when "MAX_TOKENS"   then "length"
-                        when "SAFETY"       then "content_filter"
-                        else "stop"
-                        end
+        finish_reason =
+          case candidate&.dig("finishReason")
+          when "STOP"         then "stop"
+          when "MAX_TOKENS"   then "length"
+          when "SAFETY"       then "content_filter"
+          else "stop"
+          end
 
         {
           "id"      => "gemini-#{SecureRandom.hex(8)}",
