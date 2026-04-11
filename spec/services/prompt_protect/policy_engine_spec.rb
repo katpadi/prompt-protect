@@ -44,6 +44,25 @@ RSpec.describe PromptProtect::PolicyEngine do
       end
     end
 
+    context "with profile overrides" do
+      it "applies overrides on top of env and defaults" do
+        engine = described_class.new(:high, overrides: { high: :sanitize })
+        expect(engine.call).to eq(:sanitize)
+      end
+
+      it "overrides take precedence over env overrides" do
+        with_env("PROMPT_PROTECT_POLICY_HIGH" => "allow") do
+          engine = described_class.new(:high, overrides: { high: :sanitize })
+          expect(engine.call).to eq(:sanitize)
+        end
+      end
+
+      it "does not affect other risk levels" do
+        engine = described_class.new(:low, overrides: { high: :sanitize })
+        expect(engine.call).to eq(:allow)
+      end
+    end
+
     context "with an unknown risk level" do
       let(:risk_level) { :extreme }
 

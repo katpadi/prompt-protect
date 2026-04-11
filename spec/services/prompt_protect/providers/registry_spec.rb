@@ -22,8 +22,12 @@ RSpec.describe PromptProtect::Providers::Registry do
       expect(described_class.adapter_for(nil)).to eq(PromptProtect::Providers::OpenAIAdapter)
     end
 
+    it "returns GeminiAdapter for 'gemini'" do
+      expect(described_class.adapter_for("gemini")).to eq(PromptProtect::Providers::GeminiAdapter)
+    end
+
     it "raises ArgumentError for unknown providers" do
-      expect { described_class.adapter_for("gemini") }
+      expect { described_class.adapter_for("unknown_llm") }
         .to raise_error(ArgumentError, /Unknown provider/)
     end
   end

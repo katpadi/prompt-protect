@@ -8,8 +8,9 @@ module PromptProtect
       high: :block
     }.freeze
 
-    def initialize(risk_level)
+    def initialize(risk_level, overrides: {})
       @risk_level = risk_level
+      @overrides  = overrides
     end
 
     def call
@@ -27,7 +28,7 @@ module PromptProtect
     private
 
     def policy
-      @policy ||= DEFAULTS.merge(overrides_from_env)
+      @policy ||= DEFAULTS.merge(overrides_from_env).merge(@overrides)
     end
 
     def overrides_from_env

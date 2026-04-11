@@ -261,4 +261,303 @@ RSpec.describe "POST /v1/chat/completions", type: :request do
       end
     end
   end
+
+  # ---------------------------------------------------------------------------
+  # Backward compatibility — requests without prompt_protect should still work
+  # ---------------------------------------------------------------------------
+  context "backward compatibility (no prompt_protect key)" do
+    let(:messages) { [ { "role" => "user", "content" => "What is the weather today?" } ] }
+
+    before { stub_openai && post_completion(messages) }
+
+    it "returns 200" do
+      expect(response).to have_http_status(:ok)
+    end
+
+    it "does not include prompt_protect metadata in the response" do
+      expect(JSON.parse(response.body)).not_to have_key("prompt_protect")
+    end
+  end
+
+  # ---------------------------------------------------------------------------
+  # Profile selection — lenient (sanitize instead of block, restore output)
+  # ---------------------------------------------------------------------------
+  context "with prompt_protect profile: lenient" do
+    let(:messages) { [ { "role" => "user", "content" => "John Smith needs support with reading." } ] }
+
+    def post_with_profile(profile, extra_opts = {})
+      post "/v1/chat/completions",
+        params: { model: model, messages: messages, prompt_protect: { profile: profile }.merge(extra_opts) }.to_json,
+        headers: headers
+    end
+
+    context "when SSN is present (high risk) — lenient sanitizes instead of blocking" do
+      let(:messages) { [ { "role" => "user", "content" => "Student SSN is 123-45-6789" } ] }
+
+      before do
+        stub_openai
+        post_with_profile("lenient")
+      end
+
+      it "returns 200 (sanitizes rather than blocks)" do
+        expect(response).to have_http_status(:ok)
+      end
+
+      it "masks the SSN before forwarding" do
+        expect(a_request(:post, /openai\.com/).with { |req|
+          !JSON.parse(req.body)["messages"].first["content"].include?("123-45-6789")
+        }).to have_been_made
+      end
+    end
+
+    context "with include_findings: true" do
+      let(:messages) { [ { "role" => "user", "content" => "Email john@example.com for details." } ] }
+
+      before do
+        stub_openai
+        post_with_profile("lenient", include_findings: true)
+      end
+
+      it "returns 200" do
+        expect(response).to have_http_status(:ok)
+      end
+
+      it "includes prompt_protect metadata in the response" do
+        body = JSON.parse(response.body)
+        expect(body).to have_key("prompt_protect")
+      end
+
+      it "metadata includes the profile name" do
+        pp_meta = JSON.parse(response.body)["prompt_protect"]
+        expect(pp_meta["profile"]).to eq("lenient")
+      end
+
+      it "metadata includes the action taken" do
+        pp_meta = JSON.parse(response.body)["prompt_protect"]
+        expect(pp_meta["action"]).to eq("sanitize")
+      end
+
+      it "metadata includes findings_summary by type" do
+        pp_meta = JSON.parse(response.body)["prompt_protect"]
+        expect(pp_meta["findings_summary"]).to be_a(Hash)
+        expect(pp_meta["findings_summary"]["email"]).to eq(1)
+      end
+
+      it "metadata does not include raw sensitive values" do
+        pp_meta = JSON.parse(response.body)["prompt_protect"]
+        expect(pp_meta.to_json).not_to include("john@example.com")
+      end
+    end
+  end
+
+  # ---------------------------------------------------------------------------
+  # Inline policy_overrides (no named profile required)
+  # ---------------------------------------------------------------------------
+  context "with inline policy_overrides" do
+    context "when high risk is overridden to sanitize" do
+      let(:messages) { [ { "role" => "user", "content" => "SSN is 123-45-6789" } ] }
+
+      before do
+        stub_openai
+        post "/v1/chat/completions",
+          params: { model: model, messages: messages, prompt_protect: { policy_overrides: { high: "sanitize" } } }.to_json,
+          headers: headers
+      end
+
+      it "returns 200 (sanitizes rather than blocks)" do
+        expect(response).to have_http_status(:ok)
+      end
+
+      it "masks the SSN before forwarding" do
+        expect(a_request(:post, /openai\.com/).with { |req|
+          !JSON.parse(req.body)["messages"].first["content"].include?("123-45-6789")
+        }).to have_been_made
+      end
+    end
+
+    context "inline overrides take precedence over named profile" do
+      let(:messages) { [ { "role" => "user", "content" => "SSN is 123-45-6789" } ] }
+
+      before do
+        stub_openai
+        post "/v1/chat/completions",
+          params: {
+            model: model, messages: messages,
+            prompt_protect: { profile: "lenient", policy_overrides: { high: "block" } }
+          }.to_json,
+          headers: headers
+      end
+
+      it "blocks (inline override wins over lenient profile)" do
+        expect(response).to have_http_status(422)
+      end
+    end
+  end
+
+  # ---------------------------------------------------------------------------
+  # Person-name detection and sanitization
+  # ---------------------------------------------------------------------------
+  context "person-name detection (default profile — person-only is low risk, allowed)" do
+    let(:messages) { [ { "role" => "user", "content" => "John Smith needs support with reading." } ] }
+
+    before { stub_openai && post_completion(messages) }
+
+    it "detects the person name" do
+      types = response.headers["X-Prompt-Protect-Detected-Types"].split(",")
+      expect(types).to include("person")
+    end
+
+    it "sets risk level to low (person-only)" do
+      expect(response.headers["X-Prompt-Protect-Risk-Level"]).to eq("low")
+    end
+
+    it "allows (does not mask) with default profile" do
+      expect(response.headers["X-Prompt-Protect-Action"]).to eq("allow")
+    end
+  end
+
+  context "person-name with lenient profile (person-only is still low→allow)" do
+    let(:messages) { [ { "role" => "user", "content" => "John Smith needs support with reading." } ] }
+
+    before do
+      stub_openai
+      post "/v1/chat/completions",
+        params: { model: model, messages: messages, prompt_protect: { profile: "lenient" } }.to_json,
+        headers: headers
+    end
+
+    it "detects the person name" do
+      types = response.headers["X-Prompt-Protect-Detected-Types"].split(",")
+      expect(types).to include("person")
+    end
+
+    it "allows (lenient only overrides high→sanitize; person-only is low→allow)" do
+      expect(response.headers["X-Prompt-Protect-Action"]).to eq("allow")
+    end
+  end
+
+  context "person-name with email (medium risk) — sanitization masks person placeholder" do
+    let(:messages) { [ { "role" => "user", "content" => "John Smith sent john@example.com." } ] }
+
+    before do
+      stub_openai
+      post_completion(messages)
+    end
+
+    it "sanitizes the message" do
+      expect(response.headers["X-Prompt-Protect-Action"]).to eq("sanitize")
+    end
+
+    it "masks the email before forwarding" do
+      expect(a_request(:post, /openai\.com/).with { |req|
+        content = JSON.parse(req.body)["messages"].first["content"]
+        !content.include?("john@example.com")
+      }).to have_been_made
+    end
+  end
+
+  # ---------------------------------------------------------------------------
+  # Output restoration — restore_output: true/false
+  # (uses email to trigger sanitize action reliably)
+  # ---------------------------------------------------------------------------
+  context "with restore_output: true/false" do
+    # email triggers medium risk → sanitize
+    let(:messages) { [ { "role" => "user", "content" => "Email john@example.com for details." } ] }
+
+    def post_with_restore(restore_output)
+      post "/v1/chat/completions",
+        params: {
+          model: model,
+          messages: messages,
+          prompt_protect: { profile: "default", restore_output: restore_output }
+        }.to_json,
+        headers: headers
+    end
+
+    before do
+      stub_request(:post, /api\.openai\.com\/v1\/chat\/completions/)
+        .to_return(
+          status: 200,
+          headers: { "Content-Type" => "application/json" },
+          body: {
+            id: "chatcmpl-restore",
+            object: "chat.completion",
+            choices: [ { message: { role: "assistant", content: "I sent a message to [EMAIL_1]." } } ]
+          }.to_json
+        )
+    end
+
+    context "when restore_output is true" do
+      before { post_with_restore(true) }
+
+      it "returns 200" do
+        expect(response).to have_http_status(:ok)
+      end
+
+      it "restores the original email in the response" do
+        content = JSON.parse(response.body).dig("choices", 0, "message", "content")
+        expect(content).to include("john@example.com")
+        expect(content).not_to include("[EMAIL_1]")
+      end
+    end
+
+    context "when restore_output is false" do
+      before { post_with_restore(false) }
+
+      it "returns 200" do
+        expect(response).to have_http_status(:ok)
+      end
+
+      it "leaves placeholders in the response" do
+        content = JSON.parse(response.body).dig("choices", 0, "message", "content")
+        expect(content).to include("[EMAIL_1]")
+        expect(content).not_to include("john@example.com")
+      end
+    end
+  end
+
+  # ---------------------------------------------------------------------------
+  # Multiple entity restore correctness
+  # (email triggers sanitize; person is low-risk/allowed — only email restored)
+  # ---------------------------------------------------------------------------
+  context "multiple-entity restore correctness" do
+    let(:messages) do
+      [
+        { "role" => "user", "content" => "Contact jane@school.edu and notify bob@work.org." }
+      ]
+    end
+
+    before do
+      stub_request(:post, /api\.openai\.com\/v1\/chat\/completions/)
+        .to_return(
+          status: 200,
+          headers: { "Content-Type" => "application/json" },
+          body: {
+            id: "chatcmpl-multi",
+            object: "chat.completion",
+            choices: [ {
+              message: {
+                role: "assistant",
+                content: "I emailed [EMAIL_1] and CC'd [EMAIL_2]."
+              }
+            } ]
+          }.to_json
+        )
+      post "/v1/chat/completions",
+        params: {
+          model: model,
+          messages: messages,
+          prompt_protect: { restore_output: true }
+        }.to_json,
+        headers: headers
+    end
+
+    it "restores all email entities correctly" do
+      content = JSON.parse(response.body).dig("choices", 0, "message", "content")
+      expect(content).to include("jane@school.edu")
+      expect(content).to include("bob@work.org")
+      expect(content).not_to include("[EMAIL_1]")
+      expect(content).not_to include("[EMAIL_2]")
+    end
+  end
 end

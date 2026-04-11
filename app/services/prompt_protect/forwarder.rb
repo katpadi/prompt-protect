@@ -11,8 +11,9 @@ module PromptProtect
     end
 
     def initialize(payload)
-      @payload  = payload.except("provider")
       provider  = payload["provider"] || ENV.fetch("PROMPT_PROTECT_PROVIDER", Providers::Registry::DEFAULT)
+      model     = payload["model"]    || ENV.fetch("PROMPT_PROTECT_MODEL", nil)
+      @payload  = payload.except("provider").merge(model ? { "model" => model } : {})
       @adapter  = Providers::Registry.adapter_for(provider).new(@payload)
     end
 

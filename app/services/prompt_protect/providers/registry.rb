@@ -8,7 +8,7 @@ module PromptProtect
     #   Registry.adapter_for("anthropic") # => AnthropicAdapter
     #   Registry.adapter_for(nil)         # => OpenAIAdapter (default)
     module Registry
-      KNOWN_PROVIDERS = %w[openai anthropic cohere].freeze
+      KNOWN_PROVIDERS = %w[openai anthropic cohere gemini].freeze
       DEFAULT = "openai"
 
       def self.adapter_for(provider_name)
@@ -17,6 +17,7 @@ module PromptProtect
         when "openai"    then OpenAIAdapter
         when "anthropic" then AnthropicAdapter
         when "cohere"    then CohereAdapter
+        when "gemini"    then GeminiAdapter
         else raise ArgumentError, "Unknown provider '#{name}'. Available: #{KNOWN_PROVIDERS.join(', ')}"
         end
       end
